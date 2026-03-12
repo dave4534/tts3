@@ -14,4 +14,5 @@ Format: `[Task ID] One-line summary`
 - [1.1] ChatterboxTTS GPU class: loads model, generate(text, voice_path) → WAV bytes; sample voices in image; requires `hf-token` secret
 - [1.2] Single-chunk TTS test passed; `modal run modal_app/main.py` produces /tmp/tts-output.wav
 - [1.3] Added generate_batch(): accepts list of chunks, processes via starmap, returns ordered WAV segments; `modal run modal_app/main.py::test_batch` writes chunk_000.wav … to /tmp/tts-batch/
+- [1.4] Added stitch() and generate_and_stitch(); pydub concatenates WAV segments to single MP3; `modal run modal_app/main.py::test_pipeline` produces /tmp/tts-output.mp3
 - [0.3] Set up Modal account and installed `modal` CLI

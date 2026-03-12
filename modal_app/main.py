@@ -36,6 +36,7 @@ image = (
 app = modal.App("tts-web-app", image=image)
 
 with image.imports():
+    from pydub import AudioSegment  # noqa: E402
     import torchaudio  # noqa: E402
 
 
@@ -99,6 +100,47 @@ class ChatterboxTTS:
         inputs = [(chunk, voice_path) for chunk in chunks]
         return list(self.generate.starmap(inputs, order_outputs=True))
 
+    @modal.method()
+    def stitch(self, wav_segments: list[bytes]) -> bytes:
+        """
+        Concatenate WAV segments into a single MP3.
+
+        Args:
+            wav_segments: List of WAV audio bytes in order.
+
+        Returns:
+            Single MP3 as bytes.
+        """
+        if not wav_segments:
+            return b""
+        combined = AudioSegment.empty()
+        for wav_bytes in wav_segments:
+            segment = AudioSegment.from_wav(io.BytesIO(wav_bytes))
+            combined += segment
+        buffer = io.BytesIO()
+        combined.export(buffer, format="mp3")
+        buffer.seek(0)
+        return buffer.read()
+
+    @modal.method()
+    def generate_and_stitch(
+        self,
+        chunks: list[str],
+        voice_path: str,
+    ) -> bytes:
+        """
+        Generate TTS for chunks in parallel, then stitch into a single MP3.
+
+        Args:
+            chunks: List of text chunks (each up to ~300 chars).
+            voice_path: Path to 6-10 second WAV reference clip.
+
+        Returns:
+            Single MP3 as bytes.
+        """
+        segments = self.generate_batch.local(chunks, voice_path)
+        return self.stitch.local(segments)
+
 
 # Default voice path inside the container (zip extracts to /voices/chatterbox-tts-voices/prompts/)
 DEFAULT_VOICE_PATH = f"{VOICES_DIR}/chatterbox-tts-voices/prompts/Lucy.wav"
@@ -138,3 +180,21 @@ def test_batch(
         path.write_bytes(audio_bytes)
         print(f"Saved {path.name} ({len(audio_bytes)} bytes)")
     print(f"Done. Output in {output_dir}")
+
+
+@app.local_entrypoint()
+def test_pipeline(
+    output_path: str = "/tmp/tts-output.mp3",
+) -> None:
+    """Test full pipeline: batch TTS + stitch (task 1.4)."""
+    chunks = [
+        "First chunk: Hello from the TTS web app.",
+        "Second chunk: Chatterbox is running on Modal.",
+        "Third chunk: Batch processing and stitching into one MP3.",
+    ]
+    tts = ChatterboxTTS()
+    print(f"Generating {len(chunks)} chunks and stitching to MP3...")
+    mp3_bytes = tts.generate_and_stitch.remote(chunks, DEFAULT_VOICE_PATH)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_path).write_bytes(mp3_bytes)
+    print(f"Saved to {output_path} ({len(mp3_bytes)} bytes)")
