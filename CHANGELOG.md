@@ -32,4 +32,5 @@ Format: `[Task ID] One-line summary`
 - [3.13] generate() retries=3; pipeline errors return "Something went wrong. Please try again."
 - [3.14] CORS: allow_origins from FRONTEND_ORIGIN env (default "*"); set via Modal secret for production
 - [3.15] test_e2e local entrypoint: POST /convert → poll status → download MP3
+- [4.1–4.10] Phase 4 frontend: text input + word counter, file upload (txt/pdf), voice selector with preview, convert button, progress bar, audio player, download + Start Over; API wiring; warm amber design
 - [0.3] Set up Modal account and installed `modal` CLI

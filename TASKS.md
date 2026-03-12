@@ -69,19 +69,19 @@
 
 ## Phase 4: Frontend (React + Tailwind + Shadcn)
 
-- [ ] **4.1** Set up project structure: pages, components, hooks, utils
-- [ ] **4.2** Implement warm & friendly design system: color palette, rounded corners, soft shadows, typography (see PRD style guide)
-- [ ] **4.3** Build text input component: large textarea with live word counter ("4,230 / 20,000 words"), word counter turns red over limit
-- [ ] **4.4** Build file upload component: drag-and-drop zone + button, accepts .txt/.pdf (max 10 MB), populates textarea with extracted text
-- [ ] **4.5** Build voice selection component: horizontal card row (vertical on mobile), each card has name, description, play button for 6-sec preview, highlighted border on selection, one pre-selected by default
-- [ ] **4.6** Build convert button: large CTA, disabled state when no text or voice, loading state
-- [ ] **4.7** Build progress bar component: percentage display, "Warming up..." state, animated fill
-- [ ] **4.8** Build audio player component: play/pause, scrub bar, timestamp display (appears after conversion)
-- [ ] **4.9** Build download button and "Start Over" reset link
-- [ ] **4.10** Wire up API integration: submit text → poll progress → display result
-- [ ] **4.11** Add error handling UI: display backend error messages, retry button, file validation messages
-- [ ] **4.12** Implement responsive layout: test on mobile widths (375px, 390px, 414px) and desktop
-- [ ] **4.13** Add loading state for initial Modal cold start ("Warming up...")
+- [x] **4.1** Set up project structure: pages, components, hooks, utils
+- [x] **4.2** Implement warm & friendly design system: color palette, rounded corners, soft shadows, typography (see PRD style guide)
+- [x] **4.3** Build text input component: large textarea with live word counter ("4,230 / 20,000 words"), word counter turns red over limit
+- [x] **4.4** Build file upload component: drag-and-drop zone + button, accepts .txt/.pdf (max 10 MB), populates textarea with extracted text
+- [x] **4.5** Build voice selection component: horizontal card row (vertical on mobile), each card has name, description, play button for 6-sec preview, highlighted border on selection, one pre-selected by default
+- [x] **4.6** Build convert button: large CTA, disabled state when no text or voice, loading state
+- [x] **4.7** Build progress bar component: percentage display, "Warming up..." state, animated fill
+- [x] **4.8** Build audio player component: play/pause, scrub bar, timestamp display (appears after conversion)
+- [x] **4.9** Build download button and "Start Over" reset link
+- [x] **4.10** Wire up API integration: submit text → poll progress → display result
+- [x] **4.11** Add error handling UI: display backend error messages, retry button, file validation messages
+- [x] **4.12** Implement responsive layout: test on mobile widths (375px, 390px, 414px) and desktop
+- [x] **4.13** Add loading state for initial Modal cold start ("Warming up...")
 
 ---
 
