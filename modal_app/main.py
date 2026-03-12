@@ -78,6 +78,27 @@ class ChatterboxTTS:
         buffer.seek(0)
         return buffer.read()
 
+    @modal.method()
+    def generate_batch(
+        self,
+        chunks: list[str],
+        voice_path: str,
+    ) -> list[bytes]:
+        """
+        Generate audio for multiple chunks in parallel; returns segments in input order.
+
+        Args:
+            chunks: List of text chunks (each up to ~300 chars).
+            voice_path: Path to 6-10 second WAV reference clip.
+
+        Returns:
+            List of WAV audio bytes, one per chunk, in the same order as chunks.
+        """
+        if not chunks:
+            return []
+        inputs = [(chunk, voice_path) for chunk in chunks]
+        return list(self.generate.starmap(inputs, order_outputs=True))
+
 
 # Default voice path inside the container (zip extracts to /voices/chatterbox-tts-voices/prompts/)
 DEFAULT_VOICE_PATH = f"{VOICES_DIR}/chatterbox-tts-voices/prompts/Lucy.wav"
@@ -95,3 +116,25 @@ def test(
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     Path(output_path).write_bytes(audio_bytes)
     print(f"Saved to {output_path}")
+
+
+@app.local_entrypoint()
+def test_batch(
+    output_dir: str = "/tmp/tts-batch",
+) -> None:
+    """Test parallel batch generation (task 1.3)."""
+    chunks = [
+        "First chunk: Hello from the TTS web app.",
+        "Second chunk: Chatterbox is running on Modal.",
+        "Third chunk: Batch processing in parallel.",
+    ]
+    tts = ChatterboxTTS()
+    print(f"Generating {len(chunks)} chunks in parallel with voice: {DEFAULT_VOICE_PATH}")
+    segments = tts.generate_batch.remote(chunks, DEFAULT_VOICE_PATH)
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for i, audio_bytes in enumerate(segments):
+        path = out_dir / f"chunk_{i:03d}.wav"
+        path.write_bytes(audio_bytes)
+        print(f"Saved {path.name} ({len(audio_bytes)} bytes)")
+    print(f"Done. Output in {output_dir}")
