@@ -41,7 +41,7 @@
 - [x] **2.3** Normalize audio levels across all clips (consistent volume)
 - [x] **2.4** Store clips in `/voices` directory with descriptive filenames
 - [x] **2.5** Create `voices.json` manifest: id, name, description, filename for each voice
-- [ ] **2.6** Test each voice clip with Modal worker — verify output quality
+- [x] **2.6** Test each voice clip with Modal worker — verify output quality
 
 ---
 

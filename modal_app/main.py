@@ -6,7 +6,9 @@ Serves file parsing, chunking, TTS generation, and audio stitching.
 """
 
 import io
+import json
 import re
+import sys
 from pathlib import Path
 
 import modal
@@ -40,6 +42,8 @@ def chunk_text(text: str, max_chars: int = 300) -> list[str]:
 CHATTERBOX_VOICES_URL = "https://modal-cdn.com/blog/audio/chatterbox-tts-voices.zip"
 VOICES_DIR = "/voices"
 
+VOICES_CUSTOM_PATH = "/voices-custom"
+
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("wget", "unzip", "ffmpeg")
@@ -56,6 +60,7 @@ image = (
         "torch",
         "torchaudio",
     )
+    .add_local_dir("voices", VOICES_CUSTOM_PATH)
 )
 
 app = modal.App("tts-web-app", image=image)
@@ -398,3 +403,34 @@ def test_full_pipeline(
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     Path(output_path).write_bytes(mp3_bytes)
     print(f"Saved to {output_path} ({len(mp3_bytes)} bytes)")
+
+
+@app.local_entrypoint()
+def test_voice(
+    voice_path: str = "",
+    voice_id: str = "",
+    output_path: str = "/tmp/tts-voice-test.wav",
+) -> None:
+    """Test a voice clip with Modal worker (task 2.6). Uses Lucy by default."""
+    if voice_path:
+        path = voice_path
+    elif voice_id:
+        manifest = json.loads(Path("voices/voices.json").read_text())
+        voice = next((v for v in manifest["voices"] if v["id"] == voice_id), None)
+        if not voice:
+            print(f"Error: voice id '{voice_id}' not found in voices.json", file=sys.stderr)
+            raise SystemExit(1)
+        path = f"{VOICES_CUSTOM_PATH}/{voice['filename']}"
+        if not Path(f"voices/{voice['filename']}").exists():
+            print(f"Error: voices/{voice['filename']} not found. Add the clip first.", file=sys.stderr)
+            raise SystemExit(1)
+    else:
+        path = DEFAULT_VOICE_PATH
+
+    prompt = "This is a quick test of the voice. Does it sound clear and natural?"
+    tts = ChatterboxTTS()
+    print(f"Testing voice: {path}")
+    audio_bytes = tts.generate.remote(prompt, path)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_path).write_bytes(audio_bytes)
+    print(f"Saved to {output_path} ({len(audio_bytes)} bytes)")

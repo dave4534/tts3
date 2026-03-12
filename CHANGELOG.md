@@ -22,4 +22,5 @@ Format: `[Task ID] One-line summary`
 - [2.3] Added voices/normalize_clips.py: normalize to target dBFS for consistent volume
 - [2.4] Defined clip filenames: calm-older-man.wav, upbeat-young-woman.wav, etc.
 - [2.5] Created voices/voices.json manifest (id, name, description, filename per voice)
+- [2.6] Added test_voice entrypoint; voices/ mounted at /voices-custom in Modal image
 - [0.3] Set up Modal account and installed `modal` CLI

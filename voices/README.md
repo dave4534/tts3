@@ -27,5 +27,11 @@ python voices/normalize_clips.py voices/*.wav --out-dir voices/normalized
 
 Store normalized WAV files in this directory. See `voices.json` for the manifest (Task 2.5).
 
+**Test each voice with Modal (Task 2.6):**
+```bash
+modal run modal_app/main.py::test_voice                    # test Lucy (sample)
+modal run modal_app/main.py::test_voice --voice-id calm-older-man   # test custom clip
+```
+
 **Format:** WAV, normalized volume (use `normalize_clips.py`).
 **Source:** LibriVox, Mozilla Common Voice (open-licensed).
