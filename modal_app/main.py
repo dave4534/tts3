@@ -127,6 +127,11 @@ def run_tts_pipeline(job_id: str) -> None:
             "progress": 100,
             "mp3": mp3_bytes,
         }
+        import time
+
+        entries = completed_jobs.get(COMPLETED_JOBS_KEY, [])
+        entries.append((job_id, time.time()))
+        completed_jobs[COMPLETED_JOBS_KEY] = entries
     except Exception as e:
         job_store[job_id] = {
             **job,
@@ -142,13 +147,55 @@ def web() -> "FastAPI":
     import uuid
 
     from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import FileResponse
     from pydantic import BaseModel
 
     api = FastAPI(title="TTS Web App API")
+    api.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Frontend origin; tighten in production
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @api.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @api.get("/voices")
+    def list_voices() -> dict:
+        voices = _load_voices()
+        result = []
+        for v in voices:
+            preview_path = Path(f"/voices/{v['filename']}")
+            result.append({
+                "id": v["id"],
+                "name": v["name"],
+                "description": v["description"],
+                "preview_url": f"/voices/preview/{v['id']}" if preview_path.exists() else None,
+            })
+        result.insert(0, {
+            "id": "lucy",
+            "name": "Lucy (dev)",
+            "description": "Sample voice for development",
+            "preview_url": None,
+        })
+        return {"voices": result}
+
+    @api.get("/voices/preview/{voice_id}")
+    def voice_preview(voice_id: str):
+        if voice_id == "lucy":
+            raise HTTPException(404, "Lucy preview not available")
+        voices = _load_voices()
+        voice = next((v for v in voices if v["id"] == voice_id), None)
+        if not voice:
+            raise HTTPException(404, "Voice not found")
+        path = Path(f"/voices/{voice['filename']}")
+        if not path.exists():
+            raise HTTPException(404, "Preview clip not found")
+        return FileResponse(path, media_type="audio/wav")
 
     class ConvertRequest(BaseModel):
         text: str
@@ -249,6 +296,29 @@ def web() -> "FastAPI":
         return Response(content=mp3, media_type="audio/mpeg")
 
     return api
+
+
+# Track completed jobs for cleanup
+COMPLETED_JOBS_KEY = "_completed"
+completed_jobs = modal.Dict.from_name("tts-completed-jobs", create_if_missing=True)
+
+
+@app.function(image=web_image, schedule=modal.Cron("*/10 * * * *"))  # every 10 min
+def cleanup_old_jobs() -> None:
+    """Delete completed MP3s older than 30 minutes."""
+    import time
+
+    cutoff = time.time() - (30 * 60)
+    entries = completed_jobs.get(COMPLETED_JOBS_KEY, [])
+    kept = []
+    for jid, ts in entries:
+        if ts >= cutoff:
+            kept.append((jid, ts))
+        else:
+            job = job_store.get(jid)
+            if job:
+                job_store[jid] = {**job, "mp3": None}
+    completed_jobs[COMPLETED_JOBS_KEY] = kept
 
 
 with image.imports():

@@ -27,4 +27,6 @@ Format: `[Task ID] One-line summary`
 - [3.3] POST /convert: JSON text + voice_id, word limit 20k, returns job_id; Modal Dict for job store
 - [3.4–3.5] File upload: multipart file+voice_id, .txt/.pdf, 10MB; PyMuPDF for PDF extraction
 - [3.6–3.10] Chunking, GPU dispatch (run_tts_pipeline.spawn), status and download endpoints; full convert flow
+- [3.11] GET /voices returns manifest (id, name, description, preview_url); GET /voices/preview/{voice_id} serves WAV clips
+- [3.12] cleanup_old_jobs cron: deletes completed MP3s older than 30 min (Modal Dict stores list under `_completed`, no .items())
 - [0.3] Set up Modal account and installed `modal` CLI
