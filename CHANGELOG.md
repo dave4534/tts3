@@ -7,4 +7,8 @@ Format: `[Task ID] One-line summary`
 
 ## MVP Build
 
-<!-- Add entries here as tasks are completed -->
+- [0.1] Created `.gitignore` (Node, Python, .env, __pycache__, build outputs, IDE/OS)
+- [0.2] Scaffolded React frontend with Vite + Tailwind CSS + Shadcn UI in `/frontend`
+- [0.3] Modal CLI verified; `hello.py` runs successfully on Modal
+- [0.5] Created `/modal_app` (placeholder main.py) and `/voices` (README for clip storage)
+- [0.3] Set up Modal account and installed `modal` CLI

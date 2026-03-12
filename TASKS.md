@@ -7,13 +7,13 @@
 
 ## Phase 0: Project Setup
 
-- [ ] **0.1** Initialize Git repo and create `.gitignore` (Node, Python, .env, __pycache__, etc.)
-- [ ] **0.2** Scaffold React frontend with Vite + Tailwind CSS
-- [ ] **0.3** Set up Modal account and install `modal` CLI. Verify with `modal run` hello-world.
+- [x] **0.1** Initialize Git repo and create `.gitignore` (Node, Python, .env, __pycache__, etc.)
+- [x] **0.2** Scaffold React frontend with Vite + Tailwind CSS + Shadcn UI
+- [x] **0.3** Set up Modal account and install `modal` CLI. Verify with `python3 -m modal run hello.py` (output: "Hello from Modal!").
 - [ ] **0.4** Create a Vercel account and link to the frontend repo (for deployment later)
-- [ ] **0.5** Establish project folder structure:
+- [x] **0.5** Establish project folder structure:
   ```
-  /frontend        → React + Tailwind (Vite)
+  /frontend        → React + Tailwind + Shadcn (Vite)
   /modal_app       → Modal backend: FastAPI API + GPU worker (single deployment)
   /voices          → Reference audio clips (6-10 sec each)
   /docs            → PRD and specs
@@ -67,7 +67,7 @@
 
 ---
 
-## Phase 4: Frontend (React + Tailwind)
+## Phase 4: Frontend (React + Tailwind + Shadcn)
 
 - [ ] **4.1** Set up project structure: pages, components, hooks, utils
 - [ ] **4.2** Implement warm & friendly design system: color palette, rounded corners, soft shadows, typography (see PRD style guide)

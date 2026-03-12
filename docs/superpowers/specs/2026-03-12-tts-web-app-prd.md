@@ -97,7 +97,7 @@ Job state is stored in memory on the Modal backend. If the container restarts mi
 
 | Layer | Technology | Hosting | Cost |
 |---|---|---|---|
-| Frontend | React + Tailwind CSS | Vercel (free tier) | $0 |
+| Frontend | React + Tailwind CSS + Shadcn UI | Vercel (free tier) | $0 |
 | Backend API + TTS Engine | Python / FastAPI + Chatterbox Multilingual | Modal (serverless, CPU + GPU) | ~$0-12/mo (covered by $30/mo free tier) |
 | File parsing | PyMuPDF (PDF), built-in (TXT) | Runs on Modal (CPU) | included |
 | Audio stitching | pydub + ffmpeg | Runs on Modal (GPU) | included |

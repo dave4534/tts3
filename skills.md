@@ -36,6 +36,12 @@ Reference for AI coding assistants working on this project.
 - **Import as:** `import fitz`
 - **Why not PyPDF2:** Better handling of complex layouts, multi-column, tables
 
+### Tailwind CSS + Shadcn UI (Frontend Styling)
+- **Tailwind:** https://tailwindcss.com — utility-first CSS
+- **Shadcn:** https://ui.shadcn.com — accessible, copy-paste components built on Radix UI + Tailwind
+- **Note:** Shadcn requires Tailwind. Use Shadcn for buttons, cards, progress bars, inputs; use Tailwind utilities for layout and custom styling.
+- **Init:** Run `npx shadcn@latest init` in the frontend directory after Vite + Tailwind are set up.
+
 ### pydub + ffmpeg (Audio Stitching)
 - **Docs:** https://github.com/jiaaro/pydub
 - **Runs on:** Modal GPU functions (ample RAM available)
