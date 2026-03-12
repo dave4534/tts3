@@ -9,6 +9,7 @@ Text-to-speech web app. Users paste text or upload files, select a voice, conver
 - Read `TASKS.md` for the current build checklist
 - After completing each task, mark it `[x]` in `TASKS.md`
 - Add a one-line summary to `CHANGELOG.md`
+- Commit and push to GitHub between tasks (before starting the next task)
 
 ## Architecture (2 layers)
 1. **Frontend:** React + Tailwind CSS + Shadcn UI → deployed to Vercel
