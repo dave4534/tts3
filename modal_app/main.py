@@ -132,11 +132,11 @@ def run_tts_pipeline(job_id: str) -> None:
         entries = completed_jobs.get(COMPLETED_JOBS_KEY, [])
         entries.append((job_id, time.time()))
         completed_jobs[COMPLETED_JOBS_KEY] = entries
-    except Exception as e:
+    except Exception:
         job_store[job_id] = {
             **job,
             "state": "failed",
-            "error": str(e),
+            "error": "Something went wrong. Please try again.",
         }
 
 
@@ -151,10 +151,16 @@ def web() -> "FastAPI":
     from fastapi.responses import FileResponse
     from pydantic import BaseModel
 
+    import os
+
+    origin_str = os.environ.get("FRONTEND_ORIGIN", "*").strip()
+    allow_origins = (
+        ["*"] if origin_str == "*" else [o.strip() for o in origin_str.split(",")]
+    )
     api = FastAPI(title="TTS Web App API")
     api.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Frontend origin; tighten in production
+        allow_origins=allow_origins,  # Set FRONTEND_ORIGIN in Modal secret for production
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -340,7 +346,7 @@ class ChatterboxTTS:
 
         self.model = ChatterboxTurboTTS.from_pretrained(device="cuda")
 
-    @modal.method()
+    @modal.method(retries=3)
     def generate(
         self,
         text: str,
@@ -659,6 +665,66 @@ def test_full_pipeline(
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     Path(output_path).write_bytes(mp3_bytes)
     print(f"Saved to {output_path} ({len(mp3_bytes)} bytes)")
+
+
+@app.local_entrypoint()
+def test_e2e(
+    api_url: str = "https://dave4534--tts-api.modal.run",
+    output_path: str = "/tmp/tts-e2e-output.mp3",
+) -> None:
+    """E2E test: submit text → poll status → download MP3 (task 3.15)."""
+    import time
+    import urllib.error
+    import urllib.request
+
+    text = "Hello from the end-to-end test. This short clip verifies the full pipeline."
+    payload = json.dumps({"text": text, "voice_id": "lucy"}).encode()
+    req = urllib.request.Request(
+        f"{api_url}/convert",
+        data=payload,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        print(f"POST /convert failed: {e.code} {e.reason}", file=sys.stderr)
+        raise SystemExit(1)
+    job_id = data.get("job_id")
+    if not job_id:
+        print("No job_id in response", file=sys.stderr)
+        raise SystemExit(1)
+    print(f"Job {job_id}: polling for completion...")
+    for _ in range(120):
+        try:
+            with urllib.request.urlopen(f"{api_url}/job/{job_id}/status", timeout=30) as r:
+                status = json.loads(r.read().decode())
+        except urllib.error.HTTPError as e:
+            print(f"GET status failed: {e.code}", file=sys.stderr)
+            raise SystemExit(1)
+        state = status.get("state", "")
+        progress = status.get("progress", 0)
+        if state == "complete":
+            print(f"Complete ({progress}%)")
+            break
+        if state == "failed":
+            print(f"Job failed: {status.get('error', 'unknown')}", file=sys.stderr)
+            raise SystemExit(1)
+        print(f"  {state} {progress}%")
+        time.sleep(2)
+    else:
+        print("Timeout waiting for completion", file=sys.stderr)
+        raise SystemExit(1)
+    try:
+        with urllib.request.urlopen(f"{api_url}/job/{job_id}/download", timeout=60) as r:
+            mp3 = r.read()
+    except urllib.error.HTTPError as e:
+        print(f"GET download failed: {e.code}", file=sys.stderr)
+        raise SystemExit(1)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_path).write_bytes(mp3)
+    print(f"Saved to {output_path} ({len(mp3)} bytes)")
 
 
 @app.local_entrypoint()

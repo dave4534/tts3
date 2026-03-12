@@ -29,4 +29,7 @@ Format: `[Task ID] One-line summary`
 - [3.6–3.10] Chunking, GPU dispatch (run_tts_pipeline.spawn), status and download endpoints; full convert flow
 - [3.11] GET /voices returns manifest (id, name, description, preview_url); GET /voices/preview/{voice_id} serves WAV clips
 - [3.12] cleanup_old_jobs cron: deletes completed MP3s older than 30 min (Modal Dict stores list under `_completed`, no .items())
+- [3.13] generate() retries=3; pipeline errors return "Something went wrong. Please try again."
+- [3.14] CORS: allow_origins from FRONTEND_ORIGIN env (default "*"); set via Modal secret for production
+- [3.15] test_e2e local entrypoint: POST /convert → poll status → download MP3
 - [0.3] Set up Modal account and installed `modal` CLI

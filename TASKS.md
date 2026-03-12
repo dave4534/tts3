@@ -61,9 +61,9 @@
 - [x] **3.10** Create download endpoint (`GET /job/{job_id}/download`): serves the completed MP3
 - [x] **3.11** Create voice list endpoint (`GET /voices`): returns voice manifest + serves preview clips
 - [x] **3.12** Add temporary file cleanup: delete completed MP3s older than 30 minutes
-- [ ] **3.13** Add error handling: retry failed chunks (up to 3x), return user-friendly error messages per PRD
-- [ ] **3.14** Add CORS configuration for frontend origin
-- [ ] **3.15** Test full flow: upload text → get job ID → poll progress → download MP3
+- [x] **3.13** Add error handling: retry failed chunks (up to 3x), return user-friendly error messages per PRD
+- [x] **3.14** Add CORS configuration for frontend origin
+- [x] **3.15** Test full flow: upload text → get job ID → poll progress → download MP3
 
 ---
 
