@@ -7,6 +7,7 @@ Text-to-speech web app. Users paste text or upload files, select a voice, conver
 
 ## Task Tracking
 - Read `TASKS.md` for the current build checklist
+- Follow the phase and task order in `TASKS.md` strictly. Do not suggest skipping phases or doing tasks out of order (e.g. Phase 3 before Phase 2). Respect dependencies: later phases often depend on outputs of earlier phases.
 - After completing each task: describe how to test it, then ask if the user wants you to update `TASKS.md`, `CHANGELOG.md`, and push to GitHub. Do not update or push until the user confirms.
 - When confirmed: mark task `[x]` in `TASKS.md`, add one-line summary to `CHANGELOG.md`, commit and push.
 
