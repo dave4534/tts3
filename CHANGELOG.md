@@ -16,4 +16,5 @@ Format: `[Task ID] One-line summary`
 - [1.3] Added generate_batch(): accepts list of chunks, processes via starmap, returns ordered WAV segments; `modal run modal_app/main.py::test_batch` writes chunk_000.wav … to /tmp/tts-batch/
 - [1.4] Added stitch() and generate_and_stitch(); pydub concatenates WAV segments to single MP3; `modal run modal_app/main.py::test_pipeline` produces /tmp/tts-output.mp3
 - [1.5] Added generate_and_stitch_with_progress(): yields progress per chunk; `modal run modal_app/main.py::test_progress` writes /tmp/tts-output-progress.mp3
+- [1.6] Full pipeline test: chunk_text() at sentence boundaries, test_full_pipeline with 1,000+ words → 22 chunks → stitched MP3; `modal run modal_app/main.py::test_full_pipeline` produces /tmp/tts-full-output.mp3
 - [0.3] Set up Modal account and installed `modal` CLI

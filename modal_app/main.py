@@ -6,9 +6,34 @@ Serves file parsing, chunking, TTS generation, and audio stitching.
 """
 
 import io
+import re
 from pathlib import Path
 
 import modal
+
+
+def chunk_text(text: str, max_chars: int = 300) -> list[str]:
+    """
+    Split text into chunks of ~max_chars, breaking at sentence boundaries.
+    """
+    text = text.strip()
+    if not text:
+        return []
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    chunks: list[str] = []
+    current: list[str] = []
+    current_len = 0
+    for s in sentences:
+        s_len = len(s) + 1
+        if current_len + s_len > max_chars and current:
+            chunks.append(" ".join(current))
+            current = []
+            current_len = 0
+        current.append(s)
+        current_len += s_len
+    if current:
+        chunks.append(" ".join(current))
+    return chunks
 
 # Image: Chatterbox TTS + voice prompts
 # Download sample voices at build time (Lucy.wav) for testing until /voices has real clips
@@ -240,6 +265,129 @@ def test_progress(
     ]
     tts = ChatterboxTTS()
     print(f"Generating {len(chunks)} chunks with progress updates...")
+    mp3_bytes = b""
+    for update in tts.generate_and_stitch_with_progress.remote_gen(
+        chunks, DEFAULT_VOICE_PATH
+    ):
+        print(f"  Progress: {update['progress']}% (chunk {update['chunk']}/{update['total']})")
+        if "mp3" in update and update["mp3"]:
+            mp3_bytes = update["mp3"]
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_path).write_bytes(mp3_bytes)
+    print(f"Saved to {output_path} ({len(mp3_bytes)} bytes)")
+
+
+# Sample text for full pipeline test (1,000+ words)
+SAMPLE_1000_WORDS = """
+The sun was setting over the quiet town, casting long shadows across the empty streets.
+Sarah walked slowly toward the old library, her footsteps echoing in the stillness.
+She had been coming here every Thursday for as long as she could remember.
+Inside, the familiar smell of old books greeted her like an old friend.
+The librarian nodded and returned to her crossword puzzle.
+Sarah found her usual spot by the window and opened the novel she had been reading.
+The story was about a woman who discovered she could travel through time.
+Each chapter brought new twists and unexpected turns.
+Sarah lost herself in the narrative, forgetting about the world outside.
+Hours passed before she finally looked up from the page.
+The library was almost empty now, with just a few evening visitors.
+She marked her place and stood to stretch her tired legs.
+Through the window, she watched the streetlights flicker on one by one.
+It was time to head home, but she felt reluctant to leave.
+The book had pulled her into another world entirely.
+She promised herself she would return tomorrow to continue the journey.
+Outside, the cool evening air felt refreshing against her skin.
+She walked quickly through the growing darkness toward her apartment.
+The city was waking up for the night, with restaurants and cafes filling with people.
+Sarah preferred the quiet of the early evening to the busy nightlife.
+At home, she made a simple dinner and sat down to eat alone.
+She thought about the book and wondered what would happen next.
+The characters had become real to her over the past few days.
+Their struggles and triumphs felt almost like her own.
+She cleaned up the kitchen and settled into her favorite chair.
+The television stayed off as she picked up the book again.
+Reading had always been her escape from the pressures of daily life.
+Work had been particularly stressful this week, with endless meetings and deadlines.
+The library was her sanctuary, a place where she could breathe.
+She read until her eyes grew heavy and the words began to blur.
+Finally, she closed the book and headed to bed.
+Tomorrow would bring another day of challenges, but she would face them.
+For now, she would rest and dream of distant lands and adventures.
+The alarm rang at six o'clock, pulling her from a deep sleep.
+She rolled over and blinked at the bright morning light.
+Another day had begun, full of possibilities and unknown paths.
+She stretched and smiled, remembering the book waiting for her.
+Perhaps today would be the day she finished the story.
+Or perhaps she would discover something new in its pages.
+Either way, she looked forward to losing herself in another world.
+The coffee machine hummed as she prepared her morning brew.
+She glanced at the clock and realized she was running late.
+Quickly, she threw on her clothes and grabbed her bag.
+The bus arrived just as she reached the stop, a small victory.
+She found a seat and opened her book for the short ride.
+Twenty minutes later, she stepped off near her office building.
+The day passed in a blur of emails and meetings.
+At lunch, she escaped to a quiet park bench with her book.
+The autumn leaves crunched beneath her feet as she walked.
+She found a spot in the sun and read for the entire hour.
+Returning to work, she felt refreshed and ready to continue.
+The afternoon flew by, and suddenly it was five o'clock.
+She packed her things and headed back to the bus stop.
+This time, she went straight to the library instead of home.
+The same librarian was there, and she smiled in recognition.
+Sarah found her window seat and dove back into the story.
+The main character was facing a critical decision.
+Would she reveal her secret to the people she loved?
+Or would she keep it hidden and risk losing everything?
+Sarah turned the pages eagerly, desperate to know the outcome.
+The author had a gift for building tension and suspense.
+Each chapter ended with a cliffhanger that demanded continuation.
+Sarah had never been so invested in a fictional world.
+When the library closed at nine, she was only halfway through.
+She checked out the book and promised to return it soon.
+At home, she read until well past midnight.
+The ending did not disappoint; it was satisfying and unexpected.
+She closed the book with a sigh of contentment.
+Some stories stayed with you long after the last page.
+This one would live in her memory for years to come.
+She fell asleep with a smile on her face.
+The next morning, she felt a strange sense of loss.
+The adventure was over, and she missed the characters already.
+But she knew there were countless other books waiting.
+The library held endless possibilities, and she would explore them all.
+She made a list of recommendations from the librarian.
+Historical fiction, science fiction, mysteries, and romance.
+Each genre offered something different, a new perspective on life.
+Reading had taught her empathy and understanding.
+It had shown her worlds she could never visit in person.
+It had given her comfort during difficult times.
+For that, she would always be grateful.
+The weekend arrived at last, and Sarah slept in late.
+She made pancakes and sat by the window with a new book.
+This one was a thriller, full of twists and surprises.
+By evening, she had read half of it and could not stop.
+She ordered takeout so she would not have to leave.
+The delivery person found her buried in the story.
+She ate distractedly, barely tasting the food.
+The final chapters kept her up until three in the morning.
+When she closed the book, her heart was still racing.
+Some stories had that power over their readers.
+She lay in bed replaying the plot in her mind.
+Sleep came eventually, but the story stayed with her until dawn.
+She dreamed of libraries and endless shelves of books.
+In the morning, she woke with a smile, ready for the next adventure.
+"""
+
+
+@app.local_entrypoint()
+def test_full_pipeline(
+    output_path: str = "/tmp/tts-full-output.mp3",
+) -> None:
+    """Test full pipeline with 1,000+ word input (task 1.6)."""
+    chunks = chunk_text(SAMPLE_1000_WORDS)
+    word_count = len(SAMPLE_1000_WORDS.split())
+    print(f"Input: {word_count} words, {len(chunks)} chunks")
+    tts = ChatterboxTTS()
+    print("Generating with progress...")
     mp3_bytes = b""
     for update in tts.generate_and_stitch_with_progress.remote_gen(
         chunks, DEFAULT_VOICE_PATH
