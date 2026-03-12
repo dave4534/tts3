@@ -18,4 +18,5 @@ Format: `[Task ID] One-line summary`
 - [1.5] Added generate_and_stitch_with_progress(): yields progress per chunk; `modal run modal_app/main.py::test_progress` writes /tmp/tts-output-progress.mp3
 - [1.6] Full pipeline test: chunk_text() at sentence boundaries, test_full_pipeline with 1,000+ words → 22 chunks → stitched MP3; `modal run modal_app/main.py::test_full_pipeline` produces /tmp/tts-full-output.mp3
 - [2.1] Created docs/phase2-voice-research-guide.md: LibriVox and Mozilla Common Voice browse/search strategies per persona
+- [2.2] Added voices/extract_clip.py: extract 6-10s segments from source audio (pydub)
 - [0.3] Set up Modal account and installed `modal` CLI
