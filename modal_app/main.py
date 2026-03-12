@@ -82,6 +82,58 @@ web_image = (
 
 job_store = modal.Dict.from_name("tts-jobs", create_if_missing=True)
 
+DEFAULT_VOICE_PATH = f"{VOICES_DIR}/chatterbox-tts-voices/prompts/Lucy.wav"
+
+
+def _resolve_voice_path(voice_id: str) -> str:
+    if voice_id == "lucy":
+        return DEFAULT_VOICE_PATH
+    data = json.loads(Path("/voices/voices.json").read_text())
+    for v in data["voices"]:
+        if v["id"] == voice_id:
+            return f"{VOICES_CUSTOM_PATH}/{v['filename']}"
+    raise ValueError(f"Unknown voice_id: {voice_id}")
+
+
+@app.function(image=web_image)
+def run_tts_pipeline(job_id: str) -> None:
+    """Run TTS pipeline for a job: chunk, generate, stitch, update job_store."""
+    job = job_store.get(job_id)
+    if not job:
+        return
+    try:
+        job_store[job_id] = {**job, "state": "warming_up", "progress": 0}
+        text = job["text"]
+        voice_id = job["voice_id"]
+        voice_path = _resolve_voice_path(voice_id)
+        chunks = chunk_text(text)
+        if not chunks:
+            job_store[job_id] = {**job, "state": "failed", "error": "No text to convert"}
+            return
+        job_store[job_id] = {**job, "state": "processing", "progress": 0}
+        tts = ChatterboxTTS()
+        mp3_bytes = b""
+        for update in tts.generate_and_stitch_with_progress.remote_gen(chunks, voice_path):
+            job_store[job_id] = {
+                **job,
+                "state": "processing",
+                "progress": update["progress"],
+            }
+            if "mp3" in update and update["mp3"]:
+                mp3_bytes = update["mp3"]
+        job_store[job_id] = {
+            **job,
+            "state": "complete",
+            "progress": 100,
+            "mp3": mp3_bytes,
+        }
+    except Exception as e:
+        job_store[job_id] = {
+            **job,
+            "state": "failed",
+            "error": str(e),
+        }
+
 
 @app.function(image=web_image)
 @modal.asgi_app(label="tts-api")
@@ -148,6 +200,7 @@ def web() -> "FastAPI":
             "text": text,
             "voice_id": voice_id,
         }
+        run_tts_pipeline.spawn(job_id)
         return {"job_id": job_id}
 
     @api.post("/convert")
@@ -168,6 +221,32 @@ def web() -> "FastAPI":
             400,
             "Provide JSON {text, voice_id} or multipart form with file + voice_id.",
         )
+
+    @api.get("/job/{job_id}/status")
+    def job_status(job_id: str) -> dict:
+        job = job_store.get(job_id)
+        if not job:
+            raise HTTPException(404, "Job not found")
+        return {
+            "job_id": job_id,
+            "state": job.get("state", "queued"),
+            "progress": job.get("progress", 0),
+            "error": job.get("error"),
+        }
+
+    @api.get("/job/{job_id}/download")
+    def job_download(job_id: str):
+        from fastapi.responses import Response
+
+        job = job_store.get(job_id)
+        if not job:
+            raise HTTPException(404, "Job not found")
+        if job.get("state") != "complete":
+            raise HTTPException(400, "Job not complete")
+        mp3 = job.get("mp3")
+        if not mp3:
+            raise HTTPException(404, "MP3 not available")
+        return Response(content=mp3, media_type="audio/mpeg")
 
     return api
 

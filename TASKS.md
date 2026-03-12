@@ -54,11 +54,11 @@
 - [x] **3.3** Create text submission endpoint (`POST /convert`): accepts JSON body with text + voice ID, returns a job ID
 - [x] **3.4** Add file upload support to `/convert`: accept .txt and .pdf files (max 10 MB)
 - [x] **3.5** Implement text extraction: plain read for .txt, PyMuPDF for .pdf
-- [ ] **3.6** Implement text chunking: split input into ~300 character chunks at sentence boundaries
-- [ ] **3.7** Implement word count validation (reject >20,000 words)
-- [ ] **3.8** Dispatch chunks to GPU worker functions for parallel TTS generation + stitching
-- [ ] **3.9** Create progress endpoint (`GET /job/{job_id}/status`): returns percentage and state (queued, warming_up, processing, complete, failed)
-- [ ] **3.10** Create download endpoint (`GET /job/{job_id}/download`): serves the completed MP3
+- [x] **3.6** Implement text chunking: split input into ~300 character chunks at sentence boundaries
+- [x] **3.7** Implement word count validation (reject >20,000 words)
+- [x] **3.8** Dispatch chunks to GPU worker functions for parallel TTS generation + stitching
+- [x] **3.9** Create progress endpoint (`GET /job/{job_id}/status`): returns percentage and state (queued, warming_up, processing, complete, failed)
+- [x] **3.10** Create download endpoint (`GET /job/{job_id}/download`): serves the completed MP3
 - [ ] **3.11** Create voice list endpoint (`GET /voices`): returns voice manifest + serves preview clips
 - [ ] **3.12** Add temporary file cleanup: delete completed MP3s older than 30 minutes
 - [ ] **3.13** Add error handling: retry failed chunks (up to 3x), return user-friendly error messages per PRD
