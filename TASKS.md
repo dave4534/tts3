@@ -29,7 +29,7 @@
 - [x] **1.2** Test single-chunk generation end-to-end on Modal (text in → WAV/MP3 out)
 - [x] **1.3** Add parallel batch processing: accept a list of chunks, process in parallel, return ordered audio segments
 - [x] **1.4** Add audio stitching on Modal: concatenate all chunk audio into a single MP3 using pydub + ffmpeg
-- [ ] **1.5** Add progress reporting: Modal function yields chunk-level progress updates during processing
+- [x] **1.5** Add progress reporting: Modal function yields chunk-level progress updates during processing
 - [ ] **1.6** Test full pipeline on Modal: 1,000+ word input → parallel chunks → stitched MP3 output
 
 ---

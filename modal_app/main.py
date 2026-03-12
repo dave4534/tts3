@@ -141,6 +141,34 @@ class ChatterboxTTS:
         segments = self.generate_batch.local(chunks, voice_path)
         return self.stitch.local(segments)
 
+    @modal.method()
+    def generate_and_stitch_with_progress(
+        self,
+        chunks: list[str],
+        voice_path: str,
+    ):
+        """
+        Generate TTS for chunks in parallel, stitch to MP3, yield progress per chunk.
+
+        Yields:
+            {"progress": int, "chunk": int, "total": int} for each chunk completed.
+            Final yield: {"progress": 100, "chunk": total, "total": total, "mp3": bytes}.
+        """
+        if not chunks:
+            yield {"progress": 100, "chunk": 0, "total": 0, "mp3": b""}
+            return
+        n = len(chunks)
+        inputs = [(chunk, voice_path) for chunk in chunks]
+        segments: list[bytes] = []
+        for i, wav_bytes in enumerate(
+            self.generate.starmap(inputs, order_outputs=True)
+        ):
+            segments.append(wav_bytes)
+            progress = int(100 * (i + 1) / n)
+            yield {"progress": progress, "chunk": i + 1, "total": n}
+        mp3 = self.stitch.local(segments)
+        yield {"progress": 100, "chunk": n, "total": n, "mp3": mp3}
+
 
 # Default voice path inside the container (zip extracts to /voices/chatterbox-tts-voices/prompts/)
 DEFAULT_VOICE_PATH = f"{VOICES_DIR}/chatterbox-tts-voices/prompts/Lucy.wav"
@@ -195,6 +223,30 @@ def test_pipeline(
     tts = ChatterboxTTS()
     print(f"Generating {len(chunks)} chunks and stitching to MP3...")
     mp3_bytes = tts.generate_and_stitch.remote(chunks, DEFAULT_VOICE_PATH)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_path).write_bytes(mp3_bytes)
+    print(f"Saved to {output_path} ({len(mp3_bytes)} bytes)")
+
+
+@app.local_entrypoint()
+def test_progress(
+    output_path: str = "/tmp/tts-output-progress.mp3",
+) -> None:
+    """Test progress reporting (task 1.5)."""
+    chunks = [
+        "First chunk: Hello from the TTS web app.",
+        "Second chunk: Chatterbox is running on Modal.",
+        "Third chunk: Progress updates as each chunk completes.",
+    ]
+    tts = ChatterboxTTS()
+    print(f"Generating {len(chunks)} chunks with progress updates...")
+    mp3_bytes = b""
+    for update in tts.generate_and_stitch_with_progress.remote_gen(
+        chunks, DEFAULT_VOICE_PATH
+    ):
+        print(f"  Progress: {update['progress']}% (chunk {update['chunk']}/{update['total']})")
+        if "mp3" in update and update["mp3"]:
+            mp3_bytes = update["mp3"]
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     Path(output_path).write_bytes(mp3_bytes)
     print(f"Saved to {output_path} ({len(mp3_bytes)} bytes)")
