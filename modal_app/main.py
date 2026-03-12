@@ -66,23 +66,67 @@ image = (
 app = modal.App("tts-web-app", image=image)
 
 # Lightweight image for FastAPI (CPU)
-web_image = modal.Image.debian_slim(python_version="3.11").pip_install(
-    "fastapi==0.115.6",
-    "uvicorn[standard]==0.32.1",
+web_image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .pip_install("fastapi==0.115.6", "uvicorn[standard]==0.32.1")
+    .add_local_dir("voices", "/voices")
 )
+
+MAX_WORDS = 20_000
+
+job_store = modal.Dict.from_name("tts-jobs", create_if_missing=True)
 
 
 @app.function(image=web_image)
 @modal.asgi_app(label="tts-api")
 def web() -> "FastAPI":
     """FastAPI app served on Modal (Phase 3)."""
-    from fastapi import FastAPI
+    import uuid
+
+    from fastapi import FastAPI, HTTPException
+    from pydantic import BaseModel
 
     api = FastAPI(title="TTS Web App API")
 
     @api.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    class ConvertRequest(BaseModel):
+        text: str
+        voice_id: str
+
+    def _load_voices() -> list[dict]:
+        data = json.loads(Path("/voices/voices.json").read_text())
+        return data["voices"]
+
+    def _validate_voice_id(voice_id: str) -> None:
+        if voice_id == "lucy":
+            return  # Dev fallback
+        voices = _load_voices()
+        if not any(v["id"] == voice_id for v in voices):
+            raise HTTPException(400, f"Unknown voice_id: {voice_id}")
+
+    @api.post("/convert")
+    def convert(req: ConvertRequest) -> dict[str, str]:
+        text = (req.text or "").strip()
+        if not text:
+            raise HTTPException(400, "Text is required")
+        word_count = len(text.split())
+        if word_count > MAX_WORDS:
+            raise HTTPException(
+                400,
+                f"Text exceeds {MAX_WORDS:,} word limit. You have {word_count:,} words.",
+            )
+        _validate_voice_id(req.voice_id)
+        job_id = str(uuid.uuid4())
+        job_store[job_id] = {
+            "state": "queued",
+            "progress": 0,
+            "text": text,
+            "voice_id": req.voice_id,
+        }
+        return {"job_id": job_id}
 
     return api
 

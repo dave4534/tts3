@@ -51,7 +51,7 @@
 
 - [x] **3.1** Create FastAPI app served via `@modal.asgi_app()` on Modal
 - [x] **3.2** Create health check endpoint (`GET /health`)
-- [ ] **3.3** Create text submission endpoint (`POST /convert`): accepts JSON body with text + voice ID, returns a job ID
+- [x] **3.3** Create text submission endpoint (`POST /convert`): accepts JSON body with text + voice ID, returns a job ID
 - [ ] **3.4** Add file upload support to `/convert`: accept .txt and .pdf files (max 10 MB)
 - [ ] **3.5** Implement text extraction: plain read for .txt, PyMuPDF for .pdf
 - [ ] **3.6** Implement text chunking: split input into ~300 character chunks at sentence boundaries
