@@ -36,7 +36,7 @@
 
 ## Phase 2: Voice Reference Clips
 
-- [ ] **2.1** Browse LibriVox and Mozilla Common Voice for speakers matching each persona (see PRD voice lineup)
+- [x] **2.1** Browse LibriVox and Mozilla Common Voice for speakers matching each persona (see PRD voice lineup)
 - [ ] **2.2** Extract clean 6-10 second clips for each of the 6 voices
 - [ ] **2.3** Normalize audio levels across all clips (consistent volume)
 - [ ] **2.4** Store clips in `/voices` directory with descriptive filenames
