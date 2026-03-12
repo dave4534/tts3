@@ -49,8 +49,8 @@
 
 > The API runs on Modal via `@modal.asgi_app()` — no separate backend service needed.
 
-- [ ] **3.1** Create FastAPI app served via `@modal.asgi_app()` on Modal
-- [ ] **3.2** Create health check endpoint (`GET /health`)
+- [x] **3.1** Create FastAPI app served via `@modal.asgi_app()` on Modal
+- [x] **3.2** Create health check endpoint (`GET /health`)
 - [ ] **3.3** Create text submission endpoint (`POST /convert`): accepts JSON body with text + voice ID, returns a job ID
 - [ ] **3.4** Add file upload support to `/convert`: accept .txt and .pdf files (max 10 MB)
 - [ ] **3.5** Implement text extraction: plain read for .txt, PyMuPDF for .pdf

@@ -65,6 +65,28 @@ image = (
 
 app = modal.App("tts-web-app", image=image)
 
+# Lightweight image for FastAPI (CPU)
+web_image = modal.Image.debian_slim(python_version="3.11").pip_install(
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.32.1",
+)
+
+
+@app.function(image=web_image)
+@modal.asgi_app(label="tts-api")
+def web() -> "FastAPI":
+    """FastAPI app served on Modal (Phase 3)."""
+    from fastapi import FastAPI
+
+    api = FastAPI(title="TTS Web App API")
+
+    @api.get("/health")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
+
+    return api
+
+
 with image.imports():
     from pydub import AudioSegment  # noqa: E402
     import torchaudio  # noqa: E402
