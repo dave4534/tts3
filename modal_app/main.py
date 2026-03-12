@@ -66,13 +66,19 @@ image = (
 app = modal.App("tts-web-app", image=image)
 
 # Lightweight image for FastAPI (CPU)
+MAX_FILE_MB = 10
+MAX_WORDS = 20_000
+
 web_image = (
     modal.Image.debian_slim(python_version="3.11")
-    .pip_install("fastapi==0.115.6", "uvicorn[standard]==0.32.1")
+    .pip_install(
+        "fastapi==0.115.6",
+        "uvicorn[standard]==0.32.1",
+        "python-multipart==0.0.18",
+        "pymupdf==1.25.1",
+    )
     .add_local_dir("voices", "/voices")
 )
-
-MAX_WORDS = 20_000
 
 job_store = modal.Dict.from_name("tts-jobs", create_if_missing=True)
 
@@ -83,7 +89,7 @@ def web() -> "FastAPI":
     """FastAPI app served on Modal (Phase 3)."""
     import uuid
 
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
     from pydantic import BaseModel
 
     api = FastAPI(title="TTS Web App API")
@@ -107,9 +113,25 @@ def web() -> "FastAPI":
         if not any(v["id"] == voice_id for v in voices):
             raise HTTPException(400, f"Unknown voice_id: {voice_id}")
 
-    @api.post("/convert")
-    def convert(req: ConvertRequest) -> dict[str, str]:
-        text = (req.text or "").strip()
+    def _extract_text_from_file(file: UploadFile) -> str:
+        file.file.seek(0)
+        content = file.file.read()
+        if len(content) > MAX_FILE_MB * 1024 * 1024:
+            raise HTTPException(400, f"File exceeds {MAX_FILE_MB} MB limit.")
+        suffix = Path(file.filename or "").suffix.lower()
+        if suffix == ".txt":
+            return content.decode("utf-8", errors="replace")
+        if suffix == ".pdf":
+            import fitz
+            doc = fitz.open(stream=content, filetype="pdf")
+            try:
+                return "\n".join(page.get_text() for page in doc)
+            finally:
+                doc.close()
+        raise HTTPException(400, "Please upload a .txt or .pdf file")
+
+    def _process_convert(text: str, voice_id: str) -> dict[str, str]:
+        text = text.strip()
         if not text:
             raise HTTPException(400, "Text is required")
         word_count = len(text.split())
@@ -118,15 +140,34 @@ def web() -> "FastAPI":
                 400,
                 f"Text exceeds {MAX_WORDS:,} word limit. You have {word_count:,} words.",
             )
-        _validate_voice_id(req.voice_id)
+        _validate_voice_id(voice_id)
         job_id = str(uuid.uuid4())
         job_store[job_id] = {
             "state": "queued",
             "progress": 0,
             "text": text,
-            "voice_id": req.voice_id,
+            "voice_id": voice_id,
         }
         return {"job_id": job_id}
+
+    @api.post("/convert")
+    async def convert(
+        request: Request,
+        file: UploadFile | None = File(None),
+        voice_id: str | None = Form(None),
+    ) -> dict[str, str]:
+        if file is not None and voice_id is not None:
+            text = _extract_text_from_file(file)
+            return _process_convert(text, voice_id)
+        content_type = (request.headers.get("Content-Type") or "").lower()
+        if "application/json" in content_type:
+            body = await request.json()
+            req = ConvertRequest.model_validate(body)
+            return _process_convert(req.text, req.voice_id)
+        raise HTTPException(
+            400,
+            "Provide JSON {text, voice_id} or multipart form with file + voice_id.",
+        )
 
     return api
 

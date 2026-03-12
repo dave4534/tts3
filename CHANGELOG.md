@@ -25,4 +25,5 @@ Format: `[Task ID] One-line summary`
 - [2.6] Added test_voice entrypoint; voices/ mounted at /voices-custom in Modal image
 - [3.1–3.2] FastAPI app via @modal.asgi_app(label="tts-api"), GET /health
 - [3.3] POST /convert: JSON text + voice_id, word limit 20k, returns job_id; Modal Dict for job store
+- [3.4–3.5] File upload: multipart file+voice_id, .txt/.pdf, 10MB; PyMuPDF for PDF extraction
 - [0.3] Set up Modal account and installed `modal` CLI
