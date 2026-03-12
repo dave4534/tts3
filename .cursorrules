@@ -1,0 +1,71 @@
+# Cursor Rules — TTS Web App
+
+> **This is the canonical rules file.** Product spec: `docs/superpowers/specs/2026-03-12-tts-web-app-prd.md`. For questions about product, read the PRD. For dev rules, read this file.
+
+## Project Overview
+Text-to-speech web app. Users paste text or upload files, select a voice, convert to MP3.
+
+## Task Tracking
+- Read `TASKS.md` for the current build checklist
+- After completing each task, mark it `[x]` in `TASKS.md`
+- Add a one-line summary to `CHANGELOG.md`
+
+## Architecture (2 layers)
+1. **Frontend:** React + Tailwind CSS → deployed to Vercel
+2. **Backend + GPU:** Python / FastAPI + Chatterbox Multilingual → all on Modal (serverless)
+
+There is NO separate backend service. Modal hosts everything: the API (via `@modal.asgi_app()`), file parsing, chunking, TTS generation, and audio stitching. The stack is just Vercel + Modal.
+
+## Critical Rules
+
+### Modal (Backend API + GPU Worker)
+- Serve the FastAPI app using `@modal.asgi_app()` on Modal.
+- Use CPU functions for lightweight work: file parsing, chunking, progress tracking, serving files.
+- Use GPU functions for heavy work: Chatterbox TTS generation and audio stitching (pydub + ffmpeg).
+- Process chunks in parallel batches using Modal's `.map()` or equivalent. Do NOT process sequentially.
+- Stitch all audio chunks into a single MP3 on the GPU function. Return only the final MP3.
+- Install ffmpeg and pydub in the Modal image.
+- Voice reference clips are bundled in the Modal image.
+- Use PyMuPDF (`import fitz`) for PDF parsing. Do NOT use PyPDF2.
+- Reference: https://modal.com/docs/examples/chatterbox_tts
+
+### Frontend (React)
+- Use Tailwind CSS for styling. No other CSS framework.
+- Warm & friendly design: soft colors, rounded corners, approachable feel.
+- Single page app, no routing needed.
+- Voice cards: horizontal row on desktop, vertical stack on mobile.
+- Poll backend every 2 seconds for progress during conversion.
+- Show "Warming up..." during Modal cold start before progress percentage kicks in.
+
+### Text Processing
+- Chunk text at ~300 characters, splitting at sentence boundaries (not mid-word).
+- Maximum 20,000 words. Validate on both frontend (word counter) and backend.
+- Maximum file upload size: 10 MB.
+- Supported file types: .txt, .pdf only.
+
+### Error Handling
+- Follow error messages exactly as specified in the PRD error handling table.
+- Retry failed chunks up to 3 times silently before showing an error to the user.
+
+### Code Style
+- Python: use type hints, async where appropriate, follow PEP 8.
+- TypeScript/React: functional components, hooks, no class components.
+- Keep files focused — one component per file, one endpoint group per router file.
+- No over-engineering. MVP only. Do not add features not in the PRD.
+
+### What NOT to build (excluded from MVP)
+- No user authentication or accounts
+- No voice cloning / upload your own voice
+- No Hebrew language support
+- No DOCX file support
+- No rate limiting
+- No Redis or external persistence
+- No payment system
+- No Render — there is no separate backend service
+
+## Reference Files
+- `docs/superpowers/specs/2026-03-12-tts-web-app-prd.md` — Full PRD
+- `TASKS.md` — Build checklist
+- `CHANGELOG.md` — Change log
+- `subagents.md` — Agent decomposition guide
+- `skills.md` — Library docs, architecture notes, common pitfalls
