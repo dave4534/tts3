@@ -5,10 +5,93 @@ FastAPI API (via @modal.asgi_app) + Chatterbox GPU workers.
 Serves file parsing, chunking, TTS generation, and audio stitching.
 """
 
+import io
+from pathlib import Path
+
 import modal
 
-app = modal.App("tts-web-app")
+# Image: Chatterbox TTS + voice prompts
+# Download sample voices at build time (Lucy.wav) for testing until /voices has real clips
+CHATTERBOX_VOICES_URL = "https://modal-cdn.com/blog/audio/chatterbox-tts-voices.zip"
+VOICES_DIR = "/voices"
 
-# TODO: Add image with ffmpeg, pydub, PyMuPDF, Chatterbox
-# TODO: Add FastAPI app via @modal.asgi_app()
-# TODO: Add GPU functions for TTS generation + stitching
+image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .apt_install("wget", "unzip", "ffmpeg")
+    .run_commands(
+        f"mkdir -p {VOICES_DIR} && "
+        f"wget -q {CHATTERBOX_VOICES_URL} -O /tmp/voices.zip && "
+        f"unzip -q -o /tmp/voices.zip -d {VOICES_DIR} && "
+        f"rm /tmp/voices.zip"
+    )
+    .uv_pip_install(
+        "chatterbox-tts==0.1.6",
+        "peft==0.18.0",
+        "pydub",
+        "torch",
+        "torchaudio",
+    )
+)
+
+app = modal.App("tts-web-app", image=image)
+
+with image.imports():
+    import torchaudio  # noqa: E402
+
+
+@app.cls(
+    gpu="a10g",
+    image=image,
+    secrets=[modal.Secret.from_name("hf-token")],
+)
+class ChatterboxTTS:
+    """GPU-backed TTS: generates audio from text + voice reference clip."""
+
+    @modal.enter()
+    def load_model(self) -> None:
+        from chatterbox.tts_turbo import ChatterboxTurboTTS
+
+        self.model = ChatterboxTurboTTS.from_pretrained(device="cuda")
+
+    @modal.method()
+    def generate(
+        self,
+        text: str,
+        voice_path: str,
+    ) -> bytes:
+        """
+        Generate audio from a text chunk and voice reference clip.
+
+        Args:
+            text: Input text (up to ~300 chars per chunk).
+            voice_path: Path to 6-10 second WAV reference clip.
+
+        Returns:
+            WAV audio as bytes.
+        """
+        wav = self.model.generate(
+            text,
+            audio_prompt_path=voice_path,
+        )
+        buffer = io.BytesIO()
+        torchaudio.save(buffer, wav, self.model.sr, format="wav")
+        buffer.seek(0)
+        return buffer.read()
+
+
+# Default voice path inside the container (zip extracts to /voices/chatterbox-tts-voices/prompts/)
+DEFAULT_VOICE_PATH = f"{VOICES_DIR}/chatterbox-tts-voices/prompts/Lucy.wav"
+
+
+@app.local_entrypoint()
+def test(
+    prompt: str = "Hello from the TTS web app. Chatterbox is running on Modal.",
+    output_path: str = "/tmp/tts-output.wav",
+) -> None:
+    """Test single-chunk generation (task 1.2)."""
+    tts = ChatterboxTTS()
+    print(f"Generating with voice: {DEFAULT_VOICE_PATH}")
+    audio_bytes = tts.generate.remote(prompt, DEFAULT_VOICE_PATH)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_path).write_bytes(audio_bytes)
+    print(f"Saved to {output_path}")
