@@ -20,4 +20,6 @@ Format: `[Task ID] One-line summary`
 - [2.1] Created docs/phase2-voice-research-guide.md: LibriVox and Mozilla Common Voice browse/search strategies per persona
 - [2.2] Added voices/extract_clip.py: extract 6-10s segments from source audio (pydub)
 - [2.3] Added voices/normalize_clips.py: normalize to target dBFS for consistent volume
+- [2.4] Defined clip filenames: calm-older-man.wav, upbeat-young-woman.wav, etc.
+- [2.5] Created voices/voices.json manifest (id, name, description, filename per voice)
 - [0.3] Set up Modal account and installed `modal` CLI

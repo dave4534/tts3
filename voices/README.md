@@ -14,13 +14,18 @@ python voices/normalize_clips.py clip1.wav clip2.wav --target -3
 python voices/normalize_clips.py voices/*.wav --out-dir voices/normalized
 ```
 
-**MVP lineup (see PRD):**
-- Calm older man
-- Upbeat young woman
-- Professional man
-- Professional woman
-- Gentle young man
-- Warm older woman
+**MVP lineup and filenames (Task 2.4):**
 
-**Format:** WAV or MP3, normalized volume.
+| Persona | Filename |
+|---------|----------|
+| Calm older man | `calm-older-man.wav` |
+| Upbeat young woman | `upbeat-young-woman.wav` |
+| Professional man | `professional-man.wav` |
+| Professional woman | `professional-woman.wav` |
+| Gentle young man | `gentle-young-man.wav` |
+| Warm older woman | `warm-older-woman.wav` |
+
+Store normalized WAV files in this directory. See `voices.json` for the manifest (Task 2.5).
+
+**Format:** WAV, normalized volume (use `normalize_clips.py`).
 **Source:** LibriVox, Mozilla Common Voice (open-licensed).

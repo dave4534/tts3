@@ -1,0 +1,40 @@
+{
+  "voices": [
+    {
+      "id": "calm-older-man",
+      "name": "Calm older man",
+      "description": "Warm, steady, grandfatherly — great for audiobooks",
+      "filename": "calm-older-man.wav"
+    },
+    {
+      "id": "upbeat-young-woman",
+      "name": "Upbeat young woman",
+      "description": "Energetic, friendly — good for articles and blogs",
+      "filename": "upbeat-young-woman.wav"
+    },
+    {
+      "id": "professional-man",
+      "name": "Professional man",
+      "description": "Clear, neutral, newscaster-style",
+      "filename": "professional-man.wav"
+    },
+    {
+      "id": "professional-woman",
+      "name": "Professional woman",
+      "description": "Clear, confident, corporate/presentation tone",
+      "filename": "professional-woman.wav"
+    },
+    {
+      "id": "gentle-young-man",
+      "name": "Gentle young man",
+      "description": "Soft-spoken, relaxed — good for bedtime stories",
+      "filename": "gentle-young-man.wav"
+    },
+    {
+      "id": "warm-older-woman",
+      "name": "Warm older woman",
+      "description": "Maternal, soothing, storytelling feel",
+      "filename": "warm-older-woman.wav"
+    }
+  ]
+}

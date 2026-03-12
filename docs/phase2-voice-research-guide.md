@@ -91,6 +91,8 @@ Use `validated.tsv` and filter by `age` + `gender`, then sample clips per `clien
 2. **Listen** — Ensure clean audio, minimal noise, clear speech
 3. **Extract** — Use `voices/extract_clip.py` to cut a 6–10 second segment at a sentence/phrase boundary (Task 2.2)
 4. **Normalize** — Use `voices/normalize_clips.py` for consistent volume across clips (Task 2.3)
+5. **Store** — Save to `voices/` with filenames per Task 2.4: `calm-older-man.wav`, etc.
+6. **Manifest** — `voices/voices.json` (Task 2.5) lists id, name, description, filename
 
 ### Extracting clips (Task 2.2)
 
