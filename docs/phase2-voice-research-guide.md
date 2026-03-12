@@ -90,7 +90,7 @@ Use `validated.tsv` and filter by `age` + `gender`, then sample clips per `clien
 1. **List candidates** — Note LibriVox project URLs + narrator names, or Common Voice `client_id`s
 2. **Listen** — Ensure clean audio, minimal noise, clear speech
 3. **Extract** — Use `voices/extract_clip.py` to cut a 6–10 second segment at a sentence/phrase boundary (Task 2.2)
-4. **Normalize** — Consistent volume across clips (Task 2.3)
+4. **Normalize** — Use `voices/normalize_clips.py` for consistent volume across clips (Task 2.3)
 
 ### Extracting clips (Task 2.2)
 
