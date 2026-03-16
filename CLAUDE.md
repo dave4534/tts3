@@ -19,7 +19,7 @@ For dev rules, architecture, and MVP boundaries, read `.cursorrules`.
 cd frontend && npm install && npm run dev    # local dev server
 cd frontend && npm run build                 # production build
 
-# Modal (backend + GPU)
+# Modal (backend + GPU) — always run from project root, not inside modal_app/
 modal serve modal_app/main.py               # local dev with hot reload
 modal deploy modal_app/main.py              # deploy to production
 ```

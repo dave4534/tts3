@@ -9,16 +9,37 @@ import io
 import json
 import re
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Dict, List, Tuple
 
 import modal
+
+
+SECTION_MAX_WORDS = 1000
+
+
+@dataclass
+class SectionSpec:
+    parent_id: str
+    section_id: str
+    index: int
+    text: str
+
+
+def _normalize_text(text: str) -> str:
+    """Collapse whitespace/newlines so TTS model gets clean prose."""
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"\n+", " ", text)      # newlines → space
+    text = re.sub(r" {2,}", " ", text)    # multiple spaces → one
+    return text.strip()
 
 
 def chunk_text(text: str, max_chars: int = 300) -> list[str]:
     """
     Split text into chunks of ~max_chars, breaking at sentence boundaries.
     """
-    text = text.strip()
+    text = _normalize_text(text)
     if not text:
         return []
     sentences = re.split(r"(?<=[.!?])\s+", text)
@@ -37,6 +58,109 @@ def chunk_text(text: str, max_chars: int = 300) -> list[str]:
         chunks.append(" ".join(current))
     return chunks
 
+
+def split_text_into_sections(text: str, max_words: int = SECTION_MAX_WORDS) -> List[str]:
+    """Split text into ~max_words word sections, preserving order.
+    """
+    words = _normalize_text(text).split()
+    if not words:
+        return []
+    sections: List[str] = []
+    current: List[str] = []
+    for w in words:
+        current.append(w)
+        if len(current) >= max_words:
+            sections.append(" ".join(current))
+            current = []
+    if current:
+        sections.append(" ".join(current))
+    return sections
+
+
+def build_parent_and_section_jobs(
+    parent_id: str,
+    text: str,
+    voice_id: str,
+    max_words: int = SECTION_MAX_WORDS,
+) -> Tuple[Dict, List[Dict]]:
+    """Pure helper to construct parent + section job dicts for long-form input.
+
+    This does not touch Modal state; callers are responsible for writing the
+    returned dicts into `job_store`.
+    """
+    section_texts = split_text_into_sections(text, max_words=max_words)
+    parent_job: Dict = {
+        "id": parent_id,
+        "kind": "parent",
+        "text": text,
+        "voice_id": voice_id,
+        "state": "queued",
+        "progress": 0,
+        "error": None,
+        "mp3": None,
+        "section_ids": [f"{parent_id}:section:{i}" for i in range(len(section_texts))],
+    }
+    section_jobs: List[Dict] = []
+    for index, section_text in enumerate(section_texts):
+        section_id = f"{parent_id}:section:{index}"
+        section_jobs.append(
+            {
+                "id": section_id,
+                "kind": "section",
+                "parent_id": parent_id,
+                "index": index,
+                "text": section_text,
+                "voice_id": voice_id,
+                "state": "queued",
+                "progress": 0,
+                "error": None,
+                "mp3": None,
+            }
+        )
+    return parent_job, section_jobs
+
+
+def compute_parent_progress(section_jobs: List[Dict]) -> int:
+    """Aggregate parent progress as the average of section progresses."""
+    if not section_jobs:
+        return 0
+    total = sum(int(job.get("progress", 0)) for job in section_jobs)
+    return int(total / len(section_jobs))
+
+
+def summarize_parent_state(parent_job: Dict, section_jobs: List[Dict]) -> Dict:
+    """Compute aggregate state/progress/error for a parent job from its sections."""
+    if not section_jobs:
+        return {
+            "state": parent_job.get("state", "queued"),
+            "progress": parent_job.get("progress", 0),
+            "error": parent_job.get("error"),
+        }
+    states = [j.get("state", "queued") for j in section_jobs]
+    errors = [j.get("error") for j in section_jobs if j.get("error")]
+    if any(s == "failed" for s in states):
+        state = "failed"
+        error = errors[0] if errors else parent_job.get("error")
+    elif all(s == "complete" for s in states):
+        state = "complete"
+        error = None
+    elif any(s in ("processing", "warming_up") for s in states):
+        state = "processing"
+        error = None
+    elif all(s == "queued" for s in states):
+        state = "queued"
+        error = None
+    else:
+        # Mixed but not failed/complete/processing → treat as processing
+        state = "processing"
+        error = None
+    progress = compute_parent_progress(section_jobs)
+    return {
+        "state": state,
+        "progress": progress,
+        "error": error,
+    }
+
 # Image: Chatterbox TTS + voice prompts
 # Download sample voices at build time (Lucy.wav) for testing until /voices has real clips
 CHATTERBOX_VOICES_URL = "https://modal-cdn.com/blog/audio/chatterbox-tts-voices.zip"
@@ -53,12 +177,8 @@ image = (
         f"unzip -q -o /tmp/voices.zip -d {VOICES_DIR} && "
         f"rm /tmp/voices.zip"
     )
-    .uv_pip_install(
-        "chatterbox-tts==0.1.6",
-        "peft==0.18.0",
-        "pydub",
-        "torch",
-        "torchaudio",
+    .run_commands(
+        "pip install numpy && pip install --no-build-isolation chatterbox-tts==0.1.3 pydub torch torchaudio"
     )
     .add_local_dir("voices", VOICES_CUSTOM_PATH)
 )
@@ -95,7 +215,7 @@ def _resolve_voice_path(voice_id: str) -> str:
     raise ValueError(f"Unknown voice_id: {voice_id}")
 
 
-@app.function(image=web_image)
+@app.function(image=web_image, timeout=3600)
 def run_tts_pipeline(job_id: str) -> None:
     """Run TTS pipeline for a job: chunk, generate, stitch, update job_store."""
     job = job_store.get(job_id)
@@ -114,29 +234,87 @@ def run_tts_pipeline(job_id: str) -> None:
         tts = ChatterboxTTS()
         mp3_bytes = b""
         for update in tts.generate_and_stitch_with_progress.remote_gen(chunks, voice_path):
-            job_store[job_id] = {
-                **job,
-                "state": "processing",
-                "progress": update["progress"],
-            }
             if "mp3" in update and update["mp3"]:
                 mp3_bytes = update["mp3"]
-        job_store[job_id] = {
-            **job,
-            "state": "complete",
-            "progress": 100,
-            "mp3": mp3_bytes,
-        }
+                job_store[job_id] = {
+                    **job,
+                    "state": "complete",
+                    "progress": 100,
+                    "mp3": mp3_bytes,
+                }
+            else:
+                job_store[job_id] = {
+                    **job,
+                    "state": "processing",
+                    "progress": update["progress"],
+                }
         import time
 
         entries = completed_jobs.get(COMPLETED_JOBS_KEY, [])
         entries.append((job_id, time.time()))
         completed_jobs[COMPLETED_JOBS_KEY] = entries
-    except Exception:
+    except BaseException as e:
+        # Surface backend error for debugging long-running jobs.
+        msg = str(e) or "Something went wrong. Please try again."
         job_store[job_id] = {
             **job,
             "state": "failed",
-            "error": "Something went wrong. Please try again.",
+            "error": msg,
+        }
+
+
+@app.function(image=web_image, timeout=3600)
+def run_section_pipeline(section_id: str) -> None:
+    """Run TTS pipeline for a single section job."""
+    job = job_store.get(section_id)
+    if not job:
+        return
+    if job.get("kind") != "section":
+        # Defensive: only operate on section jobs
+        return
+    try:
+        # Warming up
+        job_store[section_id] = {**job, "state": "warming_up", "progress": 0}
+        text = job["text"]
+        voice_id = job["voice_id"]
+        voice_path = _resolve_voice_path(voice_id)
+        chunks = chunk_text(text)
+        if not chunks:
+            job_store[section_id] = {
+                **job,
+                "state": "failed",
+                "error": "No text to convert",
+            }
+            return
+        job_store[section_id] = {**job, "state": "processing", "progress": 0}
+        tts = ChatterboxTTS()
+        mp3_bytes = b""
+        for update in tts.generate_and_stitch_with_progress.remote_gen(chunks, voice_path):
+            if "mp3" in update and update["mp3"]:
+                mp3_bytes = update["mp3"]
+                job_store[section_id] = {
+                    **job,
+                    "state": "complete",
+                    "progress": 100,
+                    "mp3": mp3_bytes,
+                }
+            else:
+                job_store[section_id] = {
+                    **job,
+                    "state": "processing",
+                    "progress": update["progress"],
+                }
+        import time
+
+        entries = completed_jobs.get(COMPLETED_JOBS_KEY, [])
+        entries.append((section_id, time.time()))
+        completed_jobs[COMPLETED_JOBS_KEY] = entries
+    except BaseException as e:
+        msg = str(e) or "Something went wrong. Please try again."
+        job_store[section_id] = {
+            **job,
+            "state": "failed",
+            "error": msg,
         }
 
 
@@ -246,15 +424,29 @@ def web() -> "FastAPI":
                 f"Text exceeds {MAX_WORDS:,} word limit. You have {word_count:,} words.",
             )
         _validate_voice_id(voice_id)
-        job_id = str(uuid.uuid4())
-        job_store[job_id] = {
-            "state": "queued",
-            "progress": 0,
-            "text": text,
-            "voice_id": voice_id,
-        }
-        run_tts_pipeline.spawn(job_id)
-        return {"job_id": job_id}
+
+        # For shorter texts, keep existing single-job behavior.
+        if word_count <= SECTION_MAX_WORDS:
+            job_id = str(uuid.uuid4())
+            job_store[job_id] = {
+                "state": "queued",
+                "progress": 0,
+                "text": text,
+                "voice_id": voice_id,
+            }
+            run_tts_pipeline.spawn(job_id)
+            return {"job_id": job_id}
+
+        # Long-form: create parent + section jobs and spawn section pipelines.
+        parent_id = str(uuid.uuid4())
+        parent_job, section_jobs = build_parent_and_section_jobs(
+            parent_id, text, voice_id, max_words=SECTION_MAX_WORDS
+        )
+        job_store[parent_id] = parent_job
+        for section in section_jobs:
+            job_store[section["id"]] = section
+            run_section_pipeline.spawn(section["id"])
+        return {"job_id": parent_id}
 
     @api.post("/convert")
     async def convert(
@@ -280,6 +472,31 @@ def web() -> "FastAPI":
         job = job_store.get(job_id)
         if not job:
             raise HTTPException(404, "Job not found")
+
+        # Parent jobs aggregate section states/progress.
+        if job.get("kind") == "parent":
+            section_ids = job.get("section_ids", [])
+            section_jobs = [job_store.get(sid) for sid in section_ids if job_store.get(sid)]
+            summary = summarize_parent_state(job, section_jobs)
+
+            # Persist aggregated state back onto the parent job so downloads
+            # can see when the parent is actually complete.
+            updated_parent = {
+                **job,
+                "state": summary.get("state", job.get("state")),
+                "progress": summary.get("progress", job.get("progress", 0)),
+                "error": summary.get("error", job.get("error")),
+            }
+            job_store[job_id] = updated_parent
+
+            return {
+                "job_id": job_id,
+                "state": summary["state"],
+                "progress": summary["progress"],
+                "error": summary["error"],
+            }
+
+        # Legacy / single-job behavior.
         return {
             "job_id": job_id,
             "state": job.get("state", "queued"),
@@ -294,6 +511,29 @@ def web() -> "FastAPI":
         job = job_store.get(job_id)
         if not job:
             raise HTTPException(404, "Job not found")
+
+        # Parent job: stitch completed section MP3s into a single MP3.
+        if job.get("kind") == "parent":
+            if job.get("state") != "complete":
+                raise HTTPException(400, "Job not complete")
+            # If we've already cached the stitched MP3, return it.
+            if job.get("mp3"):
+                return Response(content=job["mp3"], media_type="audio/mpeg")
+            section_ids = job.get("section_ids", [])
+            section_jobs = [job_store.get(sid) for sid in section_ids if job_store.get(sid)]
+            if not section_jobs or not all(s.get("state") == "complete" for s in section_jobs):
+                raise HTTPException(400, "Job not complete")
+            segments = [s.get("mp3") or b"" for s in section_jobs]
+            if not all(segments):
+                raise HTTPException(404, "MP3 not available")
+            # Simple byte-wise concatenation of section MP3s.
+            combined = b"".join(segments)
+            updated = {**job, "mp3": combined}
+            job_store[job_id] = updated
+
+            return Response(content=combined, media_type="audio/mpeg")
+
+        # Legacy / single-job download.
         if job.get("state") != "complete":
             raise HTTPException(400, "Job not complete")
         mp3 = job.get("mp3")
@@ -342,11 +582,11 @@ class ChatterboxTTS:
 
     @modal.enter()
     def load_model(self) -> None:
-        from chatterbox.tts_turbo import ChatterboxTurboTTS
+        from chatterbox.tts import ChatterboxTTS as _ChatterboxTTS
 
-        self.model = ChatterboxTurboTTS.from_pretrained(device="cuda")
+        self.model = _ChatterboxTTS.from_pretrained(device="cuda")
 
-    @modal.method(retries=3)
+    @modal.method()
     def generate(
         self,
         text: str,
@@ -362,10 +602,7 @@ class ChatterboxTTS:
         Returns:
             WAV audio as bytes.
         """
-        wav = self.model.generate(
-            text,
-            audio_prompt_path=voice_path,
-        )
+        wav = self.model.generate(text, audio_prompt_path=voice_path)
         buffer = io.BytesIO()
         torchaudio.save(buffer, wav, self.model.sr, format="wav")
         buffer.seek(0)
@@ -450,12 +687,21 @@ class ChatterboxTTS:
             yield {"progress": 100, "chunk": 0, "total": 0, "mp3": b""}
             return
         n = len(chunks)
-        inputs = [(chunk, voice_path) for chunk in chunks]
+
+        # Load voice reference once — avoids re-processing WAV per chunk
+        import torch
+        self.model.prepare_conditionals(voice_path)
+
         segments: list[bytes] = []
-        for i, wav_bytes in enumerate(
-            self.generate.starmap(inputs, order_outputs=True)
-        ):
-            segments.append(wav_bytes)
+        for i, chunk in enumerate(chunks):
+            print(f"[TTS] chunk {i+1}/{n} start: {chunk[:60]!r}", flush=True)
+            wav = self.model.generate(chunk)
+            print(f"[TTS] chunk {i+1}/{n} done", flush=True)
+            torch.cuda.empty_cache()
+            buf = io.BytesIO()
+            torchaudio.save(buf, wav, self.model.sr, format="wav")
+            buf.seek(0)
+            segments.append(buf.read())
             progress = int(100 * (i + 1) / n)
             yield {"progress": progress, "chunk": i + 1, "total": n}
         mp3 = self.stitch.local(segments)

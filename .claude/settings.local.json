@@ -2,7 +2,38 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(pip install modal 2>&1)",
+      "Bash(pip3 install modal 2>&1)",
+      "Bash(curl -s \"https://dave4534--tts-api.modal.run/health\" 2>&1)",
+      "Bash(curl -s -X POST \"https://dave4534--tts-api.modal.run/convert\" \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"text\": \"Hello world.\", \"voice_id\": \"lucy\"}' 2>&1)",
+      "Bash(which modal || python3 -m modal --version 2>&1 || pip show modal 2>&1 | head -5)",
+      "Bash(python3 -m modal app logs tts-web-app 2>&1 | tail -60)",
+      "Bash(python3 -m modal app list 2>&1)",
+      "Bash(python3 -m modal secret list 2>&1)",
+      "Bash(python3 -m modal function list tts-web-app 2>&1)",
+      "Bash(python3 -m modal --help 2>&1 | head -30)",
+      "Bash(python3 -m modal app --help 2>&1)",
+      "Bash(timeout 15 python3 -m modal dict get tts-jobs 6a996649-7f90-43fe-8908-cf65d1ab8626 2>&1)",
+      "Bash(python3 -m modal dict --help 2>&1)",
+      "Bash(pip show chatterbox-tts 2>/dev/null || pip3 show chatterbox-tts 2>/dev/null || echo \"not installed locally\")",
+      "Bash(python3 -c \"import chatterbox; print\\(dir\\(chatterbox\\)\\)\" 2>&1\npython3 -c \"from chatterbox.tts import ChatterboxTTS; print\\('ChatterboxTTS ok'\\)\" 2>&1\npython3 -c \"from chatterbox.tts_turbo import ChatterboxTurboTTS; print\\('ChatterboxTurboTTS ok'\\)\" 2>&1)",
+      "Bash(python3 -c \"\nfrom chatterbox.tts import ChatterboxTTS\nimport inspect\nprint\\(inspect.signature\\(ChatterboxTTS.generate\\)\\)\nprint\\('from_pretrained exists:', hasattr\\(ChatterboxTTS, 'from_pretrained'\\)\\)\n\" 2>&1 | grep -v NotOpenSSL | grep -v warnings | grep -v warn)",
+      "Bash(python3 -c \"\nfrom chatterbox.tts import ChatterboxTTS\nimport inspect\nprint\\(inspect.signature\\(ChatterboxTTS.from_pretrained\\)\\)\n\" 2>&1 | grep -v NotOpenSSL | grep -v warnings | grep -v warn)",
+      "Bash(pip index versions chatterbox-tts 2>&1 | head -5)",
+      "Bash(pip3 index versions chatterbox-tts 2>&1 | head -5)",
+      "Bash(cd \"/Users/dave/Desktop/AI Code Projects/TTS 3/modal_app\" && python3 -m modal deploy main.py 2>&1)",
+      "Bash(cd \"/Users/dave/Desktop/AI Code Projects/TTS 3\" && python3 -m modal deploy modal_app/main.py 2>&1)",
+      "Bash(python3 -m modal dict items tts-jobs 2>&1 | tail -40)",
+      "Bash(cd \"/Users/dave/Desktop/AI Code Projects/TTS 3\" && python3 -m modal deploy modal_app/main.py 2>&1 | tail -20)",
+      "Bash(cd \"/Users/dave/Desktop/AI Code Projects/TTS 3\" && python3 -m modal deploy modal_app/main.py 2>&1 | tail -12)",
+      "Bash(python3 << 'EOF'\nimport re\n\ndef _normalize_text\\(text\\):\n    text = text.replace\\(\"\\\\r\\\\n\", \"\\\\n\"\\).replace\\(\"\\\\r\", \"\\\\n\"\\)\n    text = re.sub\\(r\"\\\\n+\", \" \", text\\)\n    text = re.sub\\(r\" {2,}\", \" \", text\\)\n    return text.strip\\(\\)\n\ndef chunk_text\\(text, max_chars=300\\):\n    text = _normalize_text\\(text\\)\n    if not text:\n        return []\n    sentences = re.split\\(r\"\\(?<=[.!?]\\)\\\\s+\", text\\)\n    chunks = []\n    current = []\n    current_len = 0\n    for s in sentences:\n        s_len = len\\(s\\) + 1\n        if current_len + s_len > max_chars and current:\n            chunks.append\\(\" \".join\\(current\\)\\)\n            current = []\n            current_len = 0\n        current.append\\(s\\)\n        current_len += s_len\n    if current:\n        chunks.append\\(\" \".join\\(current\\)\\)\n    return chunks\n\n# Paste the raw text from the job \\(first ~2000 chars we saw\\)\nsample = r\"\"\"Date: June 10, 2025 Chapter 1 - Yazd, Aliyah to Israel, Kiryat Malachi The audio file below is a dub of Chapter 1 below also has audio clips for each section individually, so anyone can listen Or call Ham his priorityHebrew\n\nEnglish\nFamily treeRoots\n\n\nI was born in the city of Yazd, Iran, on Lag BaOmer, 18 Iyar 576, May 19, 1946. That's why they call me Shimon for\nName of Rabbi Shimon bar Yochai I didn't know the great-grandparents, but stories about them passed down to us through The parents, grandmothers, sons, aunts and uncles. Pictures from that generation have little as We will see later On my father David's side, there are no pictures or stories about the great-grandparents. We also don't have any pictures of Grandpa Eliyahu from my father's side On my mother's side there is a picture of great-grandmother Morwari and a picture of great-grandfather Hezekiah, as seen Later\n\n\n________________\n\nGreat-grandmother Morwari\n\nMy mother's maternal grandmother, named Morwari \\(Precious Stone\\), was a special character with a special story\nHer husband was named Eleazar. For the story of Morveri see Link below the image\nOn the special story of Morveri, click on the link Morwari and Elazar\n\n________________\n\nGreat-grandfather Hezekiah\n\n My great-grandfather on my mother's father's side was Hezekiah\nHis wives' names are unknown\n\nFrom left to right: Great-grandfather Hezekiah, his son Moshe from his second wife, grandfather David My great-grandfather Hezekiah had 5 children with his first wife: David, Aaron, Miriam, Sarah and more A son unknown.\"\"\"\n\nchunks = chunk_text\\(sample\\)\nfor i, c in enumerate\\(chunks\\):\n    print\\(f\"\\\\n--- CHUNK {i+1} \\({len\\(c\\)} chars\\) ---\"\\)\n    print\\(repr\\(c\\)\\)\nEOF)",
+      "Bash(python3 -c \"\nfrom chatterbox.tts import ChatterboxTTS\nimport inspect, textwrap\nsrc = inspect.getsource\\(ChatterboxTTS.generate\\)\nprint\\(textwrap.dedent\\(src\\)\\)\n\" 2>&1 | grep -v NotOpenSSL | grep -v warnings | grep -v warn)",
+      "Bash(python3 -c \"\nfrom chatterbox.tts import ChatterboxTTS\nimport inspect, textwrap\nsrc = inspect.getsource\\(ChatterboxTTS.prepare_conditionals\\)\nprint\\(textwrap.dedent\\(src\\)\\)\n\" 2>&1 | grep -v NotOpenSSL | grep -v warnings | grep -v warn)",
+      "Bash(cd \"/Users/dave/Desktop/AI Code Projects/TTS 3\" && python3 -m modal deploy modal_app/main.py 2>&1 | tail -5)",
+      "Bash(cd \"/Users/dave/Desktop/AI Code Projects/TTS 3\" && modal deploy modal_app/main.py)",
+      "Bash(which python3 && python3 -m modal --version 2>/dev/null || pip3 show modal 2>/dev/null | head -3)",
+      "Bash(cd \"/Users/dave/Desktop/AI Code Projects/TTS 3\" && python3 -m modal deploy modal_app/main.py)"
     ]
   }
 }

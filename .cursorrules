@@ -23,7 +23,7 @@ There is NO separate backend service. Modal hosts everything: the API (via `@mod
 - Serve the FastAPI app using `@modal.asgi_app()` on Modal.
 - Use CPU functions for lightweight work: file parsing, chunking, progress tracking, serving files.
 - Use GPU functions for heavy work: Chatterbox TTS generation and audio stitching (pydub + ffmpeg).
-- Process chunks in parallel batches using Modal's `.map()` or equivalent. Do NOT process sequentially.
+- Process chunks **sequentially** in the same GPU container. Do NOT use `.starmap()` or `.map()` across containers — each container reload costs 30–60s and causes jobs to hang.
 - Stitch all audio chunks into a single MP3 on the GPU function. Return only the final MP3.
 - Install ffmpeg and pydub in the Modal image.
 - Voice reference clips are bundled in the Modal image.
@@ -48,6 +48,11 @@ There is NO separate backend service. Modal hosts everything: the API (via `@mod
 - Follow error messages exactly as specified in the PRD error handling table.
 - Retry failed chunks up to 3 times silently before showing an error to the user.
 
+### Testing
+- After any change to `modal_app/main.py`, write a pytest test for it in `modal_app/tests/` and confirm it passes before marking the task done.
+- Backend tests are more valuable than frontend tests — all the real processing happens there.
+- Focus on: route responses (`/convert`, `/job/{id}/status`), `chunk_text()` edge cases (blank lines, `\r\n`, empty input, long text), and the full job lifecycle (submit → poll → complete).
+
 ### Code Style
 - Python: use type hints, async where appropriate, follow PEP 8.
 - TypeScript/React: functional components, hooks, no class components.
@@ -63,6 +68,17 @@ There is NO separate backend service. Modal hosts everything: the API (via `@mod
 - No Redis or external persistence
 - No payment system
 - No Render — there is no separate backend service
+
+## Known Pitfalls
+
+### Chatterbox TTS
+- Import: `from chatterbox.tts import ChatterboxTTS` — NOT `chatterbox.tts_turbo` (that module does not exist)
+- Call `model.prepare_conditionals(voice_path)` **once** before the chunk loop, not inside it — calling it per-chunk causes the GPU to hang on the second chunk
+- Install numpy before chatterbox-tts in the Modal image (pkuseg has a build isolation issue that requires numpy to already be present)
+
+### Modal Deploy
+- Always run `modal deploy` from the **project root**, not from inside `modal_app/` — the `voices/` directory is resolved relative to where you run the command
+- After every deploy, sanity-check: hit `/health`, submit a short text job, poll until complete
 
 ## Reference Files
 - `docs/superpowers/specs/2026-03-12-tts-web-app-prd.md` — Full PRD

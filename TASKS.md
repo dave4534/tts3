@@ -10,7 +10,7 @@
 - [x] **0.1** Initialize Git repo and create `.gitignore` (Node, Python, .env, __pycache__, etc.)
 - [x] **0.2** Scaffold React frontend with Vite + Tailwind CSS + Shadcn UI
 - [x] **0.3** Set up Modal account and install `modal` CLI. Verify with `python3 -m modal run hello.py` (output: "Hello from Modal!").
-- [ ] **0.4** Create a Vercel account and link to the frontend repo (for deployment later)
+- [x] **0.4** Create a Vercel account and link to the frontend repo (for deployment later)
 - [x] **0.5** Establish project folder structure:
   ```
   /frontend        → React + Tailwind + Shadcn (Vite)
@@ -64,6 +64,14 @@
 - [x] **3.13** Add error handling: retry failed chunks (up to 3x), return user-friendly error messages per PRD
 - [x] **3.14** Add CORS configuration for frontend origin
 - [x] **3.15** Test full flow: upload text → get job ID → poll progress → download MP3
+
+### Phase 3 (Extension): Long-form 20k Support
+
+- [x] **3.16** Design parent/section job model for long-form input (20k words) using parent jobs + ~1k-word section jobs
+- [x] **3.17** Implement pure helpers (section splitter, parent/section job creation, progress aggregation) with unit tests
+- [x] **3.18** Implement `run_section_pipeline(section_id)` using existing TTS pipeline; add tests for single-section jobs
+- [x] **3.19** Implement `run_parent_pipeline(parent_id)` to orchestrate section jobs and stitch MP3s; add tests for multi-section progress and stitching
+- [ ] **3.20** Wire multi-section pipeline into `/convert` while preserving API contract; add end-to-end test for 15–20k word input
 
 ---
 

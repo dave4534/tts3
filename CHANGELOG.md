@@ -34,3 +34,5 @@ Format: `[Task ID] One-line summary`
 - [3.15] test_e2e local entrypoint: POST /convert → poll status → download MP3
 - [4.1–4.10] Phase 4 frontend: text input + word counter, file upload (txt/pdf), voice selector with preview, convert button, progress bar, audio player, download + Start Over; API wiring; warm amber design
 - [0.3] Set up Modal account and installed `modal` CLI
+- [3.16–3.18] Long-form helpers: section splitting, parent/section job shapes, and progress aggregation with unit tests
+- [3.19] Long-form parent/section pipelines wired into `/convert` for >1k-word jobs, with section and parent status/tests
