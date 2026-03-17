@@ -60,9 +60,51 @@ Reference for AI coding assistants working on this project.
 ## Common Pitfalls
 
 1. **Don't create a separate backend service** — everything runs on Modal
-2. **Don't process chunks sequentially** — use Modal's `.map()` for parallel batches
+2. **Don't process chunks sequentially** — use Modal's `.map()` for parallel batches (except where `.cursorrules` explicitly calls for sequential processing in a single GPU container for long-form jobs)
 3. **Don't use PyPDF2** — use PyMuPDF (`fitz`) for reliable PDF extraction
 4. **Chunk at sentence boundaries** — don't split mid-word or mid-sentence (causes audio artifacts)
 5. **Voice clips must be normalized** — inconsistent volume across clips = bad UX
 6. **CORS** — Modal-hosted FastAPI must allow the Vercel frontend origin, configure early
 7. **Bundle voice clips in the Modal image** — they're static assets, include them at build time
+
+---
+
+## Adding a New TTS Persona
+
+Use this checklist whenever you add a new selectable voice.
+
+1. **Pick/prepare the clip**
+   - Source audio from an open-licensed dataset (e.g. LibriVox, Common Voice) or a curated internal file.
+   - Trim a **6–10 second** segment with consistent tone and minimal background noise.
+   - Convert to **WAV** (e.g. 16 kHz or 22.05 kHz), normalize volume to roughly match existing clips.
+   - Save under `voices/` with a descriptive filename, e.g. `calm-older-man.wav` or `Ram-Dass.wav`.
+
+2. **Register in `voices/voices.json`**
+   - Add an entry with:
+     - `id`: machine id (e.g. `"calm-older-man"` or `"ram-dass"`),
+     - `name`: display name,
+     - `description`: short UX copy,
+     - `filename`: exact WAV filename.
+   - Keep ids stable; frontend and backend both use `id` as the `voice_id`.
+
+3. **Deploy and mount**
+   - Ensure `voices/` is mounted in the Modal images (already done in `modal_app/main.py` via `add_local_dir("voices", ...)`).
+   - Run `python3 -m modal deploy modal_app/main.py` from the project root so the new clip + manifest are available in the container.
+
+4. **Verify via API**
+   - Call `GET /voices` and confirm the new persona appears with a non-null `preview_url`.
+   - Call `GET /voices/preview/{voice_id}` and listen to the clip; check for:
+     - Correct voice,
+     - Reasonable loudness vs. other personas,
+     - No obvious artifacts at start/end.
+
+5. **Test conversions**
+   - On the frontend, select the new voice and:
+     - Convert a short text (2–3 sentences),
+     - Optionally convert a longer text to ensure the long-form pipeline works with this `voice_id` as well.
+   - Listen for:
+     - Style matching the reference clip,
+     - No major glitches or volume jumps between sections.
+
+6. **Document**
+   - When a new persona is fully wired and tested, add a brief entry to `CHANGELOG.md` and, if relevant, update `docs/PROJECT_STATUS.md` to reflect the new voice.

@@ -42,6 +42,7 @@
 - [x] **2.4** Store clips in `/voices` directory with descriptive filenames
 - [x] **2.5** Create `voices.json` manifest: id, name, description, filename for each voice
 - [x] **2.6** Test each voice clip with Modal worker — verify output quality
+ - [x] **2.7** Add first curated persona voice based on Ram-Dass reference clip and wire it through `/voices`, previews, and `/convert`
 
 ---
 

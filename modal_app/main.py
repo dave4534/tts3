@@ -353,7 +353,31 @@ def web() -> "FastAPI":
         voices = _load_voices()
         result = []
         for v in voices:
-            preview_path = Path(f"/voices/{v['filename']}")
+            preview_name = v.get("preview_filename") or v["filename"]
+            preview_path = Path(f"/voices/{preview_name}")
+            # #region agent log
+            try:
+                import json as _json, time as _time
+
+                log_path = "/Users/dave/Desktop/AI Code Projects/TTS 3/.cursor/debug-f7dc5a.log"
+                payload = {
+                    "sessionId": "f7dc5a",
+                    "runId": "pre-fix",
+                    "hypothesisId": "H1",
+                    "location": "modal_app/main.py:list_voices",
+                    "message": "voice preview existence check",
+                    "data": {
+                        "id": v.get("id"),
+                        "preview_name": preview_name,
+                        "preview_exists": preview_path.exists(),
+                    },
+                    "timestamp": int(_time.time() * 1000),
+                }
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(_json.dumps(payload) + "\n")
+            except Exception:
+                pass
+            # #endregion agent log
             result.append({
                 "id": v["id"],
                 "name": v["name"],
@@ -376,7 +400,8 @@ def web() -> "FastAPI":
         voice = next((v for v in voices if v["id"] == voice_id), None)
         if not voice:
             raise HTTPException(404, "Voice not found")
-        path = Path(f"/voices/{voice['filename']}")
+        preview_name = voice.get("preview_filename") or voice["filename"]
+        path = Path(f"/voices/{preview_name}")
         if not path.exists():
             raise HTTPException(404, "Preview clip not found")
         return FileResponse(path, media_type="audio/wav")
@@ -765,6 +790,48 @@ def test_pipeline(
     Path(output_path).write_bytes(mp3_bytes)
     print(f"Saved to {output_path} ({len(mp3_bytes)} bytes)")
 
+
+PREVIEW_SENTENCE = "This is a short preview of this voice."
+
+
+@app.local_entrypoint()
+def generate_voice_previews() -> None:
+    """
+    Generate synthetic preview audio for each persona voice using a shared sentence.
+
+    This uses the reference clip as the TTS prompt but writes per-voice preview MP3s
+    under the local `voices/` directory, matching the `preview_filename` field in
+    voices/voices.json.
+    """
+    manifest_path = Path("voices/voices.json")
+    if not manifest_path.exists():
+        print("voices/voices.json not found; aborting.")
+        return
+    data = json.loads(manifest_path.read_text())
+    voices: list[dict] = data.get("voices", [])
+    if not voices:
+        print("No voices in manifest; nothing to do.")
+        return
+
+    tts = ChatterboxTTS()
+    for v in voices:
+        vid = v.get("id")
+        filename = v.get("filename")
+        if not vid or not filename:
+            continue
+        preview_filename = v.get("preview_filename") or f"{vid}-preview.mp3"
+        # Path inside the GPU container where the reference clip is mounted.
+        reference_path_in_container = f"{VOICES_CUSTOM_PATH}/{filename}"
+        try:
+            print(f"[preview] Generating preview for {vid!r} using {filename!r}...")
+            mp3_bytes = tts.generate_and_stitch.remote([PREVIEW_SENTENCE], reference_path_in_container)
+        except Exception as e:  # noqa: BLE001
+            print(f"[preview] Failed for {vid!r}: {e!r}")
+            continue
+        out_path = Path("voices") / preview_filename
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_bytes(mp3_bytes)
+        print(f"[preview] Saved {preview_filename} ({len(mp3_bytes)} bytes)")
 
 @app.local_entrypoint()
 def test_progress(

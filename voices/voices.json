@@ -1,40 +1,60 @@
 {
   "voices": [
     {
+      "id": "ram-dass",
+      "name": "Ram Dass-style voice",
+      "description": "Warm, reflective, meditative narrator tone",
+      "filename": "Ram-Dass.wav",
+      "preview_filename": "ram-dass-preview.mp3"
+    },
+    {
+      "id": "dave",
+      "name": "Dave",
+      "description": "Conversational, balanced narrator tone",
+      "filename": "Dave.wav",
+      "preview_filename": "dave-preview.mp3"
+    },
+    {
       "id": "calm-older-man",
       "name": "Calm older man",
       "description": "Warm, steady, grandfatherly — great for audiobooks",
-      "filename": "calm-older-man.wav"
+      "filename": "calm-older-man.wav",
+      "preview_filename": "calm-older-man-preview.mp3"
     },
     {
       "id": "upbeat-young-woman",
       "name": "Upbeat young woman",
       "description": "Energetic, friendly — good for articles and blogs",
-      "filename": "upbeat-young-woman.wav"
+      "filename": "upbeat-young-woman.wav",
+      "preview_filename": "upbeat-young-woman-preview.mp3"
     },
     {
       "id": "professional-man",
       "name": "Professional man",
       "description": "Clear, neutral, newscaster-style",
-      "filename": "professional-man.wav"
+      "filename": "professional-man.wav",
+      "preview_filename": "professional-man-preview.mp3"
     },
     {
       "id": "professional-woman",
       "name": "Professional woman",
       "description": "Clear, confident, corporate/presentation tone",
-      "filename": "professional-woman.wav"
+      "filename": "professional-woman.wav",
+      "preview_filename": "professional-woman-preview.mp3"
     },
     {
       "id": "gentle-young-man",
       "name": "Gentle young man",
       "description": "Soft-spoken, relaxed — good for bedtime stories",
-      "filename": "gentle-young-man.wav"
+      "filename": "gentle-young-man.wav",
+      "preview_filename": "gentle-young-man-preview.mp3"
     },
     {
       "id": "warm-older-woman",
       "name": "Warm older woman",
       "description": "Maternal, soothing, storytelling feel",
-      "filename": "warm-older-woman.wav"
+      "filename": "warm-older-woman.wav",
+      "preview_filename": "warm-older-woman-preview.mp3"
     }
   ]
 }
