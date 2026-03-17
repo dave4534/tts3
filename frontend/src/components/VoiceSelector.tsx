@@ -1,7 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getPreviewUrl, type Voice } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Play } from "lucide-react";
+import { Play, Pause } from "lucide-react";
 
 interface VoiceSelectorProps {
   voices: Voice[];
@@ -72,13 +72,36 @@ export function VoiceSelector({
 
 function PreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName: string }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => setIsPlaying(false);
+
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, []);
 
   const play = (e: React.MouseEvent) => {
     e.stopPropagation();
     const audio = audioRef.current;
-    if (audio) {
+    if (!audio) return;
+    if (audio.paused) {
       audio.currentTime = 0;
       audio.play().catch(() => {});
+    } else {
+      audio.pause();
     }
   };
 
@@ -91,7 +114,11 @@ function PreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName: str
         className="flex size-8 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-600 hover:bg-amber-100 hover:text-amber-700"
         aria-label={`Preview ${voiceName}`}
       >
-        <Play className="size-4 fill-current" />
+        {isPlaying ? (
+          <Pause className="size-4 fill-current" />
+        ) : (
+          <Play className="size-4 fill-current" />
+        )}
       </button>
     </>
   );

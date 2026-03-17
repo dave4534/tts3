@@ -355,47 +355,28 @@ def web() -> "FastAPI":
         for v in voices:
             preview_name = v.get("preview_filename") or v["filename"]
             preview_path = Path(f"/voices/{preview_name}")
-            # #region agent log
-            try:
-                import json as _json, time as _time
-
-                log_path = "/Users/dave/Desktop/AI Code Projects/TTS 3/.cursor/debug-f7dc5a.log"
-                payload = {
-                    "sessionId": "f7dc5a",
-                    "runId": "pre-fix",
-                    "hypothesisId": "H1",
-                    "location": "modal_app/main.py:list_voices",
-                    "message": "voice preview existence check",
-                    "data": {
-                        "id": v.get("id"),
-                        "preview_name": preview_name,
-                        "preview_exists": preview_path.exists(),
-                    },
-                    "timestamp": int(_time.time() * 1000),
-                }
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(_json.dumps(payload) + "\n")
-            except Exception:
-                pass
-            # #endregion agent log
             result.append({
                 "id": v["id"],
                 "name": v["name"],
                 "description": v["description"],
                 "preview_url": f"/voices/preview/{v['id']}" if preview_path.exists() else None,
             })
+        lucy_preview = Path("/voices/lucy-preview.mp3")
         result.insert(0, {
             "id": "lucy",
             "name": "Lucy (dev)",
             "description": "Sample voice for development",
-            "preview_url": None,
+            "preview_url": "/voices/preview/lucy" if lucy_preview.exists() else None,
         })
         return {"voices": result}
 
     @api.get("/voices/preview/{voice_id}")
     def voice_preview(voice_id: str):
         if voice_id == "lucy":
-            raise HTTPException(404, "Lucy preview not available")
+            path = Path("/voices/lucy-preview.mp3")
+            if not path.exists():
+                raise HTTPException(404, "Lucy preview not available")
+            return FileResponse(path, media_type="audio/wav")
         voices = _load_voices()
         voice = next((v for v in voices if v["id"] == voice_id), None)
         if not voice:
@@ -832,6 +813,22 @@ def generate_voice_previews() -> None:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_bytes(mp3_bytes)
         print(f"[preview] Saved {preview_filename} ({len(mp3_bytes)} bytes)")
+
+
+@app.local_entrypoint()
+def generate_lucy_preview() -> None:
+    """Generate synthetic preview audio for Lucy (dev) using the shared sentence."""
+    tts = ChatterboxTTS()
+    try:
+        print(f"[preview] Generating preview for 'lucy' using {DEFAULT_VOICE_PATH!r}...")
+        mp3_bytes = tts.generate_and_stitch.remote([PREVIEW_SENTENCE], DEFAULT_VOICE_PATH)
+    except Exception as e:  # noqa: BLE001
+        print(f"[preview] Failed for 'lucy': {e!r}")
+        return
+    out_path = Path("voices") / "lucy-preview.mp3"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(mp3_bytes)
+    print(f"[preview] Saved lucy-preview.mp3 ({len(mp3_bytes)} bytes)")
 
 @app.local_entrypoint()
 def test_progress(
