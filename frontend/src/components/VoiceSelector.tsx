@@ -40,17 +40,23 @@ export function VoiceSelector({
       {voices.map((v) => {
         const isSelected = selectedId === v.id;
         return (
-          <button
+          <div
             key={v.id}
-            type="button"
             role="option"
             aria-selected={isSelected}
-            disabled={disabled}
+            tabIndex={disabled ? -1 : 0}
             onClick={() => onSelect(v.id)}
+            onKeyDown={(e) => {
+              if (disabled) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelect(v.id);
+              }
+            }}
             className={cn(
               "flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all",
               "hover:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400/50",
-              "disabled:cursor-not-allowed disabled:opacity-60",
+              disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
               isSelected
                 ? "border-amber-500 bg-amber-50/80 shadow-sm"
                 : "border-stone-200 bg-white"
@@ -63,7 +69,7 @@ export function VoiceSelector({
               )}
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{v.description}</p>
-          </button>
+          </div>
         );
       })}
     </div>

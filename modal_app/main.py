@@ -231,9 +231,22 @@ def run_tts_pipeline(job_id: str) -> None:
             job_store[job_id] = {**job, "state": "failed", "error": "No text to convert"}
             return
         job_store[job_id] = {**job, "state": "processing", "progress": 0}
+        cfg_weight = job.get("cfg_weight")
+        exaggeration = job.get("exaggeration")
+        temperature = job.get("temperature")
         tts = ChatterboxTTS()
         mp3_bytes = b""
-        for update in tts.generate_and_stitch_with_progress.remote_gen(chunks, voice_path):
+        if cfg_weight is None and exaggeration is None and temperature is None:
+            updates = tts.generate_and_stitch_with_progress.remote_gen(chunks, voice_path)
+        else:
+            updates = tts.generate_and_stitch_with_progress.remote_gen(
+                chunks,
+                voice_path,
+                cfg_weight=cfg_weight if cfg_weight is not None else 0.5,
+                exaggeration=exaggeration if exaggeration is not None else 0.5,
+                temperature=temperature if temperature is not None else 0.8,
+            )
+        for update in updates:
             if "mp3" in update and update["mp3"]:
                 mp3_bytes = update["mp3"]
                 job_store[job_id] = {
@@ -287,9 +300,22 @@ def run_section_pipeline(section_id: str) -> None:
             }
             return
         job_store[section_id] = {**job, "state": "processing", "progress": 0}
+        cfg_weight = job.get("cfg_weight")
+        exaggeration = job.get("exaggeration")
+        temperature = job.get("temperature")
         tts = ChatterboxTTS()
         mp3_bytes = b""
-        for update in tts.generate_and_stitch_with_progress.remote_gen(chunks, voice_path):
+        if cfg_weight is None and exaggeration is None and temperature is None:
+            updates = tts.generate_and_stitch_with_progress.remote_gen(chunks, voice_path)
+        else:
+            updates = tts.generate_and_stitch_with_progress.remote_gen(
+                chunks,
+                voice_path,
+                cfg_weight=cfg_weight if cfg_weight is not None else 0.5,
+                exaggeration=exaggeration if exaggeration is not None else 0.5,
+                temperature=temperature if temperature is not None else 0.8,
+            )
+        for update in updates:
             if "mp3" in update and update["mp3"]:
                 mp3_bytes = update["mp3"]
                 job_store[section_id] = {
@@ -327,7 +353,7 @@ def web() -> "FastAPI":
     from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse
-    from pydantic import BaseModel
+    from pydantic import BaseModel, Field
 
     import os
 
@@ -376,7 +402,12 @@ def web() -> "FastAPI":
             path = Path("/voices/lucy-preview.mp3")
             if not path.exists():
                 raise HTTPException(404, "Lucy preview not available")
-            return FileResponse(path, media_type="audio/wav")
+            media_type = "audio/mpeg" if path.suffix.lower() == ".mp3" else "audio/wav"
+            return FileResponse(
+                path,
+                media_type=media_type,
+                headers={"Cache-Control": "no-store"},
+            )
         voices = _load_voices()
         voice = next((v for v in voices if v["id"] == voice_id), None)
         if not voice:
@@ -385,11 +416,19 @@ def web() -> "FastAPI":
         path = Path(f"/voices/{preview_name}")
         if not path.exists():
             raise HTTPException(404, "Preview clip not found")
-        return FileResponse(path, media_type="audio/wav")
+        media_type = "audio/mpeg" if path.suffix.lower() == ".mp3" else "audio/wav"
+        return FileResponse(
+            path,
+            media_type=media_type,
+            headers={"Cache-Control": "no-store"},
+        )
 
     class ConvertRequest(BaseModel):
         text: str
         voice_id: str
+        cfg_weight: float | None = Field(default=None, ge=0.0, le=2.0)
+        exaggeration: float | None = Field(default=None, ge=0.0, le=2.0)
+        temperature: float | None = Field(default=None, ge=0.0, le=2.0)
 
     def _load_voices() -> list[dict]:
         data = json.loads(Path("/voices/voices.json").read_text())
@@ -419,7 +458,13 @@ def web() -> "FastAPI":
                 doc.close()
         raise HTTPException(400, "Please upload a .txt or .pdf file")
 
-    def _process_convert(text: str, voice_id: str) -> dict[str, str]:
+    def _process_convert(
+        text: str,
+        voice_id: str,
+        cfg_weight: float | None = None,
+        exaggeration: float | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, str]:
         text = text.strip()
         if not text:
             raise HTTPException(400, "Text is required")
@@ -439,6 +484,9 @@ def web() -> "FastAPI":
                 "progress": 0,
                 "text": text,
                 "voice_id": voice_id,
+                **({"cfg_weight": cfg_weight} if cfg_weight is not None else {}),
+                **({"exaggeration": exaggeration} if exaggeration is not None else {}),
+                **({"temperature": temperature} if temperature is not None else {}),
             }
             run_tts_pipeline.spawn(job_id)
             return {"job_id": job_id}
@@ -448,6 +496,18 @@ def web() -> "FastAPI":
         parent_job, section_jobs = build_parent_and_section_jobs(
             parent_id, text, voice_id, max_words=SECTION_MAX_WORDS
         )
+        if cfg_weight is not None:
+            parent_job["cfg_weight"] = cfg_weight
+            for section in section_jobs:
+                section["cfg_weight"] = cfg_weight
+        if exaggeration is not None:
+            parent_job["exaggeration"] = exaggeration
+            for section in section_jobs:
+                section["exaggeration"] = exaggeration
+        if temperature is not None:
+            parent_job["temperature"] = temperature
+            for section in section_jobs:
+                section["temperature"] = temperature
         job_store[parent_id] = parent_job
         for section in section_jobs:
             job_store[section["id"]] = section
@@ -459,15 +519,30 @@ def web() -> "FastAPI":
         request: Request,
         file: UploadFile | None = File(None),
         voice_id: str | None = Form(None),
+        cfg_weight: float | None = Form(None),
+        exaggeration: float | None = Form(None),
+        temperature: float | None = Form(None),
     ) -> dict[str, str]:
         if file is not None and voice_id is not None:
             text = _extract_text_from_file(file)
-            return _process_convert(text, voice_id)
+            return _process_convert(
+                text,
+                voice_id,
+                cfg_weight=cfg_weight,
+                exaggeration=exaggeration,
+                temperature=temperature,
+            )
         content_type = (request.headers.get("Content-Type") or "").lower()
         if "application/json" in content_type:
             body = await request.json()
             req = ConvertRequest.model_validate(body)
-            return _process_convert(req.text, req.voice_id)
+            return _process_convert(
+                req.text,
+                req.voice_id,
+                cfg_weight=req.cfg_weight,
+                exaggeration=req.exaggeration,
+                temperature=req.temperature,
+            )
         raise HTTPException(
             400,
             "Provide JSON {text, voice_id} or multipart form with file + voice_id.",
@@ -597,6 +672,9 @@ class ChatterboxTTS:
         self,
         text: str,
         voice_path: str,
+        cfg_weight: float = 0.5,
+        exaggeration: float = 0.5,
+        temperature: float = 0.8,
     ) -> bytes:
         """
         Generate audio from a text chunk and voice reference clip.
@@ -604,11 +682,20 @@ class ChatterboxTTS:
         Args:
             text: Input text (up to ~300 chars per chunk).
             voice_path: Path to 6-10 second WAV reference clip.
+            cfg_weight: Conditioning strength for the reference clip.
+            exaggeration: Emotion/prosody exaggeration parameter.
+            temperature: Sampling temperature.
 
         Returns:
             WAV audio as bytes.
         """
-        wav = self.model.generate(text, audio_prompt_path=voice_path)
+        wav = self.model.generate(
+            text,
+            audio_prompt_path=voice_path,
+            cfg_weight=cfg_weight,
+            exaggeration=exaggeration,
+            temperature=temperature,
+        )
         buffer = io.BytesIO()
         torchaudio.save(buffer, wav, self.model.sr, format="wav")
         buffer.seek(0)
@@ -619,6 +706,9 @@ class ChatterboxTTS:
         self,
         chunks: list[str],
         voice_path: str,
+        cfg_weight: float = 0.5,
+        exaggeration: float = 0.5,
+        temperature: float = 0.8,
     ) -> list[bytes]:
         """
         Generate audio for multiple chunks in parallel; returns segments in input order.
@@ -626,13 +716,19 @@ class ChatterboxTTS:
         Args:
             chunks: List of text chunks (each up to ~300 chars).
             voice_path: Path to 6-10 second WAV reference clip.
+            cfg_weight: Conditioning strength for the reference clip.
+            exaggeration: Emotion/prosody exaggeration parameter.
+            temperature: Sampling temperature.
 
         Returns:
             List of WAV audio bytes, one per chunk, in the same order as chunks.
         """
         if not chunks:
             return []
-        inputs = [(chunk, voice_path) for chunk in chunks]
+        inputs = [
+            (chunk, voice_path, cfg_weight, exaggeration, temperature)
+            for chunk in chunks
+        ]
         return list(self.generate.starmap(inputs, order_outputs=True))
 
     @modal.method()
@@ -662,6 +758,9 @@ class ChatterboxTTS:
         self,
         chunks: list[str],
         voice_path: str,
+        cfg_weight: float = 0.5,
+        exaggeration: float = 0.5,
+        temperature: float = 0.8,
     ) -> bytes:
         """
         Generate TTS for chunks in parallel, then stitch into a single MP3.
@@ -669,11 +768,16 @@ class ChatterboxTTS:
         Args:
             chunks: List of text chunks (each up to ~300 chars).
             voice_path: Path to 6-10 second WAV reference clip.
+            cfg_weight: Conditioning strength for the reference clip.
+            exaggeration: Emotion/prosody exaggeration parameter.
+            temperature: Sampling temperature.
 
         Returns:
             Single MP3 as bytes.
         """
-        segments = self.generate_batch.local(chunks, voice_path)
+        segments = self.generate_batch.local(
+            chunks, voice_path, cfg_weight, exaggeration, temperature
+        )
         return self.stitch.local(segments)
 
     @modal.method()
@@ -681,6 +785,9 @@ class ChatterboxTTS:
         self,
         chunks: list[str],
         voice_path: str,
+        cfg_weight: float = 0.5,
+        exaggeration: float = 0.5,
+        temperature: float = 0.8,
     ):
         """
         Generate TTS for chunks in parallel, stitch to MP3, yield progress per chunk.
@@ -696,12 +803,17 @@ class ChatterboxTTS:
 
         # Load voice reference once — avoids re-processing WAV per chunk
         import torch
-        self.model.prepare_conditionals(voice_path)
+        self.model.prepare_conditionals(voice_path, exaggeration=exaggeration)
 
         segments: list[bytes] = []
         for i, chunk in enumerate(chunks):
             print(f"[TTS] chunk {i+1}/{n} start: {chunk[:60]!r}", flush=True)
-            wav = self.model.generate(chunk)
+            wav = self.model.generate(
+                chunk,
+                cfg_weight=cfg_weight,
+                exaggeration=exaggeration,
+                temperature=temperature,
+            )
             print(f"[TTS] chunk {i+1}/{n} done", flush=True)
             torch.cuda.empty_cache()
             buf = io.BytesIO()
@@ -712,6 +824,47 @@ class ChatterboxTTS:
             yield {"progress": progress, "chunk": i + 1, "total": n}
         mp3 = self.stitch.local(segments)
         yield {"progress": 100, "chunk": n, "total": n, "mp3": mp3}
+
+    @modal.method()
+    def generate_cfg_sweep(
+        self,
+        text: str,
+        voice_path: str,
+        cfg_weights: list[float],
+        exaggeration: float = 0.5,
+        temperature: float = 0.8,
+    ) -> dict[str, bytes]:
+        """
+        Generate an MP3 per cfg_weight for a single text prompt.
+
+        Intended for voice-specific conditioning experiments (accent drift).
+        """
+        if not cfg_weights:
+            return {}
+
+        import torch
+
+        # Prepare conditionals once; cfg_weight is applied during generate.
+        self.model.prepare_conditionals(voice_path, exaggeration=exaggeration)
+        results: dict[str, bytes] = {}
+
+        for cfg_weight in cfg_weights:
+            print(f"[cfg_sweep] cfg_weight={cfg_weight}", flush=True)
+            wav = self.model.generate(
+                text,
+                cfg_weight=cfg_weight,
+                exaggeration=exaggeration,
+                temperature=temperature,
+            )
+            torch.cuda.empty_cache()
+
+            buf = io.BytesIO()
+            torchaudio.save(buf, wav, self.model.sr, format="wav")
+            wav_bytes = buf.getvalue()
+            mp3_bytes = self.stitch.local([wav_bytes])
+            results[str(cfg_weight)] = mp3_bytes
+
+        return results
 
 
 # Default voice path inside the container (zip extracts to /voices/chatterbox-tts-voices/prompts/)
@@ -773,6 +926,82 @@ def test_pipeline(
 
 
 PREVIEW_SENTENCE = "This is a short preview of this voice."
+
+@app.local_entrypoint()
+def generate_cfg_weight_sweep_for_voice(
+    voice_id: str = "aba",
+    text: str = PREVIEW_SENTENCE,
+    cfg_weights: str = "0.25,0.5,0.75",
+    exaggeration: float = 0.5,
+    temperature: float = 0.8,
+) -> None:
+    """
+    Voice-specific experimentation: generate MP3s for a cfg_weight sweep.
+
+    Outputs to: `voices/experiments/<voice_id>-cfg-sweep/`
+    """
+    manifest_path = Path("voices/voices.json")
+    if not manifest_path.exists():
+        raise FileNotFoundError("voices/voices.json not found")
+
+    data = json.loads(manifest_path.read_text())
+    voices: list[dict] = data.get("voices", [])
+    voice = next((v for v in voices if v.get("id") == voice_id), None)
+    if not voice:
+        raise ValueError(f"Unknown voice_id: {voice_id!r}")
+
+    weights = [float(x.strip()) for x in cfg_weights.split(",") if x.strip()]
+    if not weights:
+        raise ValueError("cfg_weights must contain at least one numeric value")
+
+    filename = voice.get("filename")
+    if not filename:
+        raise ValueError("Voice manifest entry missing 'filename'")
+
+    reference_path_in_container = f"{VOICES_CUSTOM_PATH}/{filename}"
+
+    out_dir = Path("voices") / "experiments" / f"{voice_id}-cfg-sweep"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    print(
+        f"[cfg_sweep] voice={voice_id!r} reference={filename!r} cfg_weights={weights} exaggeration={exaggeration} temperature={temperature}",
+        flush=True,
+    )
+
+    tts = ChatterboxTTS()
+    mp3_by_cfg = tts.generate_cfg_sweep.remote(
+        text,
+        reference_path_in_container,
+        weights,
+        exaggeration=exaggeration,
+        temperature=temperature,
+    )
+
+    safe_cfg = lambda v: str(v).replace(".", "_")
+    for cfg in weights:
+        key = str(cfg)
+        mp3_bytes = mp3_by_cfg.get(key)
+        if not mp3_bytes:
+            raise RuntimeError(f"Missing sweep output for cfg_weight={key}")
+        out_path = out_dir / f"cfg_weight_{safe_cfg(cfg)}.mp3"
+        out_path.write_bytes(mp3_bytes)
+        print(f"[cfg_sweep] wrote {out_path.name} ({len(mp3_bytes)} bytes)")
+
+    manifest_out = out_dir / "manifest.json"
+    manifest_out.write_text(
+        json.dumps(
+            {
+                "voice_id": voice_id,
+                "filename": filename,
+                "text": text,
+                "cfg_weights": weights,
+                "exaggeration": exaggeration,
+                "temperature": temperature,
+            },
+            indent=2,
+        )
+    )
+    print(f"[cfg_sweep] done. See {manifest_out}")
 
 
 def resolve_voice_preview_inputs(voice: Dict) -> Tuple[str, str]:

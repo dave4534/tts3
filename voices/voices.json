@@ -16,8 +16,8 @@
     },
     {
       "id": "aba",
-      "name": "Aba",
-      "description": "Reference clip voice persona",
+      "name": "Gentle young man",
+      "description": "Soft-spoken, tuned — good for bedtime stories",
       "filename": "Aba.wav",
       "preview_filename": "aba-preview.mp3"
     },
@@ -48,13 +48,6 @@
       "description": "Clear, confident, corporate/presentation tone",
       "filename": "professional-woman.wav",
       "preview_filename": "professional-woman-preview.mp3"
-    },
-    {
-      "id": "gentle-young-man",
-      "name": "Gentle young man",
-      "description": "Soft-spoken, relaxed — good for bedtime stories",
-      "filename": "gentle-young-man.wav",
-      "preview_filename": "gentle-young-man-preview.mp3"
     },
     {
       "id": "warm-older-woman",
