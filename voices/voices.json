@@ -15,6 +15,13 @@
       "preview_filename": "dave-preview.mp3"
     },
     {
+      "id": "aba",
+      "name": "Aba",
+      "description": "Reference clip voice persona",
+      "filename": "Aba.wav",
+      "preview_filename": "aba-preview.mp3"
+    },
+    {
       "id": "calm-older-man",
       "name": "Calm older man",
       "description": "Warm, steady, grandfatherly — great for audiobooks",

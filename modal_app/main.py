@@ -775,6 +775,17 @@ def test_pipeline(
 PREVIEW_SENTENCE = "This is a short preview of this voice."
 
 
+def resolve_voice_preview_inputs(voice: Dict) -> Tuple[str, str]:
+    """Given a voice manifest entry, return (reference_path_in_container, preview_filename)."""
+    voice_id = str(voice.get("id") or "")
+    filename = voice.get("filename")
+    if not filename or not voice_id:
+        raise ValueError("Voice manifest entry missing required fields: id and filename")
+    preview_filename = voice.get("preview_filename") or f"{voice_id}-preview.mp3"
+    reference_path_in_container = f"{VOICES_CUSTOM_PATH}/{filename}"
+    return reference_path_in_container, str(preview_filename)
+
+
 @app.local_entrypoint()
 def generate_voice_previews() -> None:
     """
@@ -813,6 +824,32 @@ def generate_voice_previews() -> None:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_bytes(mp3_bytes)
         print(f"[preview] Saved {preview_filename} ({len(mp3_bytes)} bytes)")
+
+
+@app.local_entrypoint()
+def generate_voice_preview_for(voice_id: str = "aba") -> None:
+    """Generate synthetic preview audio for one persona voice using the shared sentence."""
+    manifest_path = Path("voices/voices.json")
+    if not manifest_path.exists():
+        print("voices/voices.json not found; aborting.")
+        return
+    data = json.loads(manifest_path.read_text())
+    voices: list[dict] = data.get("voices", [])
+    voice = next((v for v in voices if v.get("id") == voice_id), None)
+    if not voice:
+        print(f"Unknown voice_id: {voice_id!r}")
+        return
+
+    tts = ChatterboxTTS()
+    reference_path_in_container, preview_filename = resolve_voice_preview_inputs(voice)
+    print(
+        f"[preview] Generating preview for {voice_id!r} using reference {reference_path_in_container!r}..."
+    )
+    mp3_bytes = tts.generate_and_stitch.remote([PREVIEW_SENTENCE], reference_path_in_container)
+    out_path = Path("voices") / preview_filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(mp3_bytes)
+    print(f"[preview] Saved {preview_filename} ({len(mp3_bytes)} bytes)")
 
 
 @app.local_entrypoint()
