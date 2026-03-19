@@ -18,7 +18,7 @@ interface TextInputProps {
 export function TextInput({
   value,
   onChange,
-  placeholder = "Paste your text here or upload a file...",
+  placeholder = "Paste your text here...",
   disabled,
   className,
   "data-testid": testId,
@@ -27,7 +27,7 @@ export function TextInput({
   const overLimit = wordCount > MAX_WORDS;
 
   return (
-    <div className={cn("space-y-1", className)}>
+    <div className={cn("relative", className)}>
       <textarea
         data-testid={testId}
         value={value}
@@ -36,16 +36,16 @@ export function TextInput({
         disabled={disabled}
         rows={8}
         className={cn(
-          "w-full rounded-xl border bg-white/80 px-4 py-3 text-base transition-colors placeholder:text-muted-foreground/70",
-          "focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400",
+          "w-full rounded-xl border bg-white px-4 py-3 pr-32 text-base transition-colors placeholder:text-stone-400",
+          "focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400",
           "disabled:cursor-not-allowed disabled:opacity-60",
           overLimit ? "border-red-400" : "border-stone-200"
         )}
       />
       <p
         className={cn(
-          "text-sm tabular-nums",
-          overLimit ? "text-red-600 font-medium" : "text-muted-foreground"
+          "absolute bottom-3 right-3 text-sm tabular-nums",
+          overLimit ? "text-red-600 font-medium" : "text-stone-500"
         )}
       >
         {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} words

@@ -91,6 +91,7 @@
 - [x] **4.11** Add error handling UI: display backend error messages, retry button, file validation messages
 - [x] **4.12** Implement responsive layout: test on mobile widths (375px, 390px, 414px) and desktop
 - [x] **4.13** Add loading state for initial Modal cold start ("Warming up...")
+- [x] **4.14** Voicecraft UI polish: FileUpload full-width match; voice cards gray hover, white bg, no waveform icon, checkmark top-right
 
 ---
 

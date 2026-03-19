@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getPreviewUrl, type Voice } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Play, Pause } from "lucide-react";
+import { Play, Pause, Check } from "lucide-react";
 
 interface VoiceSelectorProps {
   voices: Voice[];
@@ -22,7 +22,7 @@ export function VoiceSelector({
 }: VoiceSelectorProps) {
   if (loading) {
     return (
-      <div className={cn("text-muted-foreground text-sm", className)}>
+      <div className={cn("text-stone-500 text-sm", className)}>
         Loading voices...
       </div>
     );
@@ -31,7 +31,7 @@ export function VoiceSelector({
   return (
     <div
       className={cn(
-        "grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3",
+        "grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3",
         className
       )}
       role="listbox"
@@ -54,21 +54,32 @@ export function VoiceSelector({
               }
             }}
             className={cn(
-              "flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all",
-              "hover:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400/50",
+              "flex flex-col rounded-xl border-2 p-4 text-left transition-all min-h-[120px] bg-white",
+              "hover:border-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300/50",
               disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
               isSelected
-                ? "border-amber-500 bg-amber-50/80 shadow-sm"
-                : "border-stone-200 bg-white"
+                ? "border-teal-600 shadow-sm"
+                : "border-stone-200"
             )}
           >
-            <div className="flex w-full items-center justify-between gap-2">
-              <span className="font-medium text-stone-900">{v.name}</span>
+            <div className="flex justify-end mb-2 min-h-6">
+              {isSelected ? (
+                <div className="flex size-6 items-center justify-center rounded-full bg-teal-600 text-white">
+                  <Check className="size-3.5" strokeWidth={3} />
+                </div>
+              ) : (
+                <div className="size-6" aria-hidden />
+              )}
+            </div>
+            <div className="mt-auto flex items-end justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-stone-900 truncate">{v.name}</p>
+                <p className="text-sm text-stone-600 truncate">{v.description}</p>
+              </div>
               {v.preview_url && (
                 <PreviewButton voiceId={v.id} voiceName={v.name} />
               )}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{v.description}</p>
           </div>
         );
       })}
@@ -76,7 +87,13 @@ export function VoiceSelector({
   );
 }
 
-function PreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName: string }) {
+function PreviewButton({
+  voiceId,
+  voiceName,
+}: {
+  voiceId: string;
+  voiceName: string;
+}) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -117,13 +134,13 @@ function PreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName: str
       <button
         type="button"
         onClick={play}
-        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-600 hover:bg-amber-100 hover:text-amber-700"
+        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-stone-600 shadow-sm hover:bg-white hover:text-teal-600"
         aria-label={`Preview ${voiceName}`}
       >
         {isPlaying ? (
           <Pause className="size-4 fill-current" />
         ) : (
-          <Play className="size-4 fill-current" />
+          <Play className="size-4 fill-current ml-0.5" />
         )}
       </button>
     </>

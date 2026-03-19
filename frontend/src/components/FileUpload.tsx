@@ -1,5 +1,6 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Upload } from "lucide-react";
 
 const MAX_MB = 10;
 const ACCEPT = ".txt,.pdf";
@@ -18,13 +19,10 @@ export function FileUpload({
   className,
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      e.target.value = "";
-
+  const processFile = useCallback(
+    (file: File) => {
       if (file.size > MAX_MB * 1024 * 1024) {
         onError(`File too large. Please upload a file under ${MAX_MB} MB.`);
         return;
@@ -52,8 +50,41 @@ export function FileUpload({
     [onFileSelect, onError]
   );
 
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = "";
+      processFile(file);
+    },
+    [processFile]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      if (disabled) return;
+      const file = e.dataTransfer.files?.[0];
+      if (file) processFile(file);
+    },
+    [disabled, processFile]
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("w-full", className)}>
       <input
         ref={inputRef}
         type="file"
@@ -62,18 +93,39 @@ export function FileUpload({
         disabled={disabled}
         className="hidden"
       />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={disabled}
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={() => !disabled && inputRef.current?.click()}
         className={cn(
-          "rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700",
-          "hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          "w-full",
+          "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-6 transition-colors",
+          "cursor-pointer",
+          isDragging
+            ? "border-teal-400 bg-teal-50/50"
+            : "border-stone-300 bg-stone-50/50 hover:border-stone-400",
+          disabled && "cursor-not-allowed opacity-60"
         )}
       >
-        Upload .txt or .pdf
-      </button>
-      <span className="text-xs text-muted-foreground">(max {MAX_MB} MB)</span>
+        <div className="flex size-10 items-center justify-center rounded-full bg-teal-100 text-teal-600">
+          <Upload className="size-5" />
+        </div>
+        <p className="text-sm text-stone-600">
+          Drag & drop a .txt or .pdf file or{" "}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              inputRef.current?.click();
+            }}
+            disabled={disabled}
+            className="font-medium text-teal-600 underline hover:text-teal-700"
+          >
+            Choose file
+          </button>
+        </p>
+      </div>
     </div>
   );
 }

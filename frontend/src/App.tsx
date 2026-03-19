@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useVoices } from "@/hooks/useVoices";
 import { useConvert } from "@/hooks/useConvert";
 import { cn } from "@/lib/utils";
+import { Sparkles } from "lucide-react";
 
 function App() {
   const [text, setText] = useState("");
@@ -55,18 +56,18 @@ function App() {
   }, [reset]);
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-4 py-8 sm:px-6">
+    <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-10 px-4 py-10 sm:px-6">
       <header className="text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-stone-900">
-          Text to Speech
+        <h1 className="font-serif text-4xl font-bold tracking-tight text-stone-900">
+          Voicecraft
         </h1>
-        <p className="mt-1 text-muted-foreground">
-          Convert text to natural-sounding audio
+        <p className="mt-2 text-base text-stone-600">
+          Transform your text into natural audio
         </p>
       </header>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-medium text-stone-800">Input</h2>
+      <section className="space-y-3">
+        <label className="text-sm font-semibold text-stone-800">Your text</label>
         <TextInput value={text} onChange={setText} disabled={isConverting} />
         <FileUpload
           onFileSelect={handleFileSelect}
@@ -74,14 +75,14 @@ function App() {
           disabled={isConverting}
         />
         {pendingFile && (
-          <p className="text-sm text-muted-foreground">
-            File: {pendingFile.name}
-          </p>
+          <p className="text-sm text-stone-500">File: {pendingFile.name}</p>
         )}
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-medium text-stone-800">Voice</h2>
+      <section className="space-y-3">
+        <label className="text-sm font-semibold text-stone-800">
+          Choose a voice
+        </label>
         {voicesError && (
           <p className="text-sm text-red-600">{voicesError}</p>
         )}
@@ -102,9 +103,10 @@ function App() {
             onClick={handleConvert}
             className={cn(
               "w-full rounded-xl py-6 text-lg font-medium",
-              "bg-amber-500 hover:bg-amber-600 text-white"
+              "bg-teal-600 hover:bg-teal-700 text-white"
             )}
           >
+            <Sparkles className="mr-2 size-5" />
             Convert to Audio
           </Button>
         )}
@@ -133,14 +135,14 @@ function App() {
               <a
                 href={convertState.downloadUrl}
                 download="tts-output.mp3"
-                className="inline-flex items-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+                className="inline-flex items-center rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
               >
                 Download MP3
               </a>
               <button
                 type="button"
                 onClick={handleStartOver}
-                className="text-sm font-medium text-amber-600 hover:underline"
+                className="text-sm font-medium text-teal-600 hover:underline"
               >
                 Start Over
               </button>
@@ -168,6 +170,10 @@ function App() {
           </div>
         )}
       </section>
+
+      <footer className="mt-auto pt-8 text-center text-sm text-stone-500">
+        Powered by advanced text-to-speech technology
+      </footer>
     </div>
   );
 }
