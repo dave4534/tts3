@@ -3,96 +3,20 @@
 > Reference: `docs/superpowers/specs/2026-03-12-tts-web-app-prd.md`
 > After completing each task, mark it `[x]` and add a one-line summary to `CHANGELOG.md`.
 
----
-
-## Phase 0: Project Setup
-
-- [x] **0.1** Initialize Git repo and create `.gitignore` (Node, Python, .env, __pycache__, etc.)
-- [x] **0.2** Scaffold React frontend with Vite + Tailwind CSS + Shadcn UI
-- [x] **0.3** Set up Modal account and install `modal` CLI. Verify with `python3 -m modal run hello.py` (output: "Hello from Modal!").
-- [x] **0.4** Create a Vercel account and link to the frontend repo (for deployment later)
-- [x] **0.5** Establish project folder structure:
-  ```
-  /frontend        → React + Tailwind + Shadcn (Vite)
-  /modal_app       → Modal backend: FastAPI API + GPU worker (single deployment)
-  /voices          → Reference audio clips (6-10 sec each)
-  /docs            → PRD and specs
-  ```
+**Deployed URLs:**
+- Frontend: `https://tts3-beryl.vercel.app/`
+- Backend API: `https://dave4534--tts-api.modal.run`
 
 ---
 
-## Phase 1: Modal GPU Worker (Chatterbox TTS)
+## Phases 0–4: Complete
 
-> Build the TTS engine first — everything else depends on it.
+Phases 0 (Setup), 1 (Modal GPU Worker), 2 (Voice Clips), 3 (Backend API), and 4 (Frontend) are all done.
+See `CHANGELOG.md` for the full history.
 
-- [x] **1.1** Create Modal function that loads Chatterbox Multilingual model and generates audio from a single text chunk + voice reference clip
-- [x] **1.2** Test single-chunk generation end-to-end on Modal (text in → WAV/MP3 out)
-- [x] **1.3** Add parallel batch processing: accept a list of chunks, process in parallel, return ordered audio segments
-- [x] **1.4** Add audio stitching on Modal: concatenate all chunk audio into a single MP3 using pydub + ffmpeg
-- [x] **1.5** Add progress reporting: Modal function yields chunk-level progress updates during processing
-- [x] **1.6** Test full pipeline on Modal: 1,000+ word input → parallel chunks → stitched MP3 output
+**One open item from Phase 3:**
 
----
-
-## Phase 2: Voice Reference Clips
-
-- [x] **2.1** Browse LibriVox and Mozilla Common Voice for speakers matching each persona (see PRD voice lineup)
-- [x] **2.2** Extract clean 6-10 second clips for each of the 6 voices
-- [x] **2.3** Normalize audio levels across all clips (consistent volume)
-- [x] **2.4** Store clips in `/voices` directory with descriptive filenames
-- [x] **2.5** Create `voices.json` manifest: id, name, description, filename for each voice
-- [x] **2.6** Test each voice clip with Modal worker — verify output quality
- - [x] **2.7** Add first curated persona voice based on Ram-Dass reference clip and wire it through `/voices`, previews, and `/convert`
-
----
-
-## Phase 3: Backend API (FastAPI on Modal)
-
-> The API runs on Modal via `@modal.asgi_app()` — no separate backend service needed.
-
-- [x] **3.1** Create FastAPI app served via `@modal.asgi_app()` on Modal
-- [x] **3.2** Create health check endpoint (`GET /health`)
-- [x] **3.3** Create text submission endpoint (`POST /convert`): accepts JSON body with text + voice ID, returns a job ID
-- [x] **3.4** Add file upload support to `/convert`: accept .txt and .pdf files (max 10 MB)
-- [x] **3.5** Implement text extraction: plain read for .txt, PyMuPDF for .pdf
-- [x] **3.6** Implement text chunking: split input into ~300 character chunks at sentence boundaries
-- [x] **3.7** Implement word count validation (reject >20,000 words)
-- [x] **3.8** Dispatch chunks to GPU worker functions for parallel TTS generation + stitching
-- [x] **3.9** Create progress endpoint (`GET /job/{job_id}/status`): returns percentage and state (queued, warming_up, processing, complete, failed)
-- [x] **3.10** Create download endpoint (`GET /job/{job_id}/download`): serves the completed MP3
-- [x] **3.11** Create voice list endpoint (`GET /voices`): returns voice manifest + serves preview clips
-- [x] **3.12** Add temporary file cleanup: delete completed MP3s older than 30 minutes
-- [x] **3.13** Add error handling: retry failed chunks (up to 3x), return user-friendly error messages per PRD
-- [x] **3.14** Add CORS configuration for frontend origin
-- [x] **3.15** Test full flow: upload text → get job ID → poll progress → download MP3
-
-### Phase 3 (Extension): Long-form 20k Support
-
-- [x] **3.16** Design parent/section job model for long-form input (20k words) using parent jobs + ~1k-word section jobs
-- [x] **3.17** Implement pure helpers (section splitter, parent/section job creation, progress aggregation) with unit tests
-- [x] **3.18** Implement `run_section_pipeline(section_id)` using existing TTS pipeline; add tests for single-section jobs
-- [x] **3.19** Implement `run_parent_pipeline(parent_id)` to orchestrate section jobs and stitch MP3s; add tests for multi-section progress and stitching
 - [ ] **3.20** Wire multi-section pipeline into `/convert` while preserving API contract; add end-to-end test for 15–20k word input
-
----
-
-## Phase 4: Frontend (React + Tailwind + Shadcn)
-
-- [x] **4.1** Set up project structure: pages, components, hooks, utils
-- [x] **4.2** Implement warm & friendly design system: color palette, rounded corners, soft shadows, typography (see PRD style guide)
-- [x] **4.3** Build text input component: large textarea with live word counter ("4,230 / 20,000 words"), word counter turns red over limit
-- [x] **4.4** Build file upload component: drag-and-drop zone + button, accepts .txt/.pdf (max 10 MB), populates textarea with extracted text
-- [x] **4.5** Build voice selection component: horizontal card row (vertical on mobile), each card has name, description, play button for 6-sec preview, highlighted border on selection, one pre-selected by default
-- [x] **4.6** Build convert button: large CTA, disabled state when no text or voice, loading state
-- [x] **4.7** Build progress bar component: percentage display, "Warming up..." state, animated fill
-- [x] **4.8** Build audio player component: play/pause, scrub bar, timestamp display (appears after conversion)
-- [x] **4.9** Build download button and "Start Over" reset link
-- [x] **4.10** Wire up API integration: submit text → poll progress → display result
-- [x] **4.11** Add error handling UI: display backend error messages, retry button, file validation messages
-- [x] **4.12** Implement responsive layout: test on mobile widths (375px, 390px, 414px) and desktop
-- [x] **4.13** Add loading state for initial Modal cold start ("Warming up...")
-- [x] **4.14** Voicecraft UI polish: FileUpload full-width match; voice cards gray hover, white bg, no waveform icon, checkmark top-right
-- [x] **4.15** Redesign entire UI: 24px left alignment, upload zone spacing, footer cleanup, theme toggle
 
 ---
 
