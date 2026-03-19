@@ -15,12 +15,14 @@ interface SelectedVoicePillProps {
   name: string;
   index: number;
   className?: string;
+  fullWidth?: boolean;
 }
 
 export function SelectedVoicePill({
   name,
   index,
   className,
+  fullWidth,
 }: SelectedVoicePillProps) {
   const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
   return (
@@ -31,7 +33,7 @@ export function SelectedVoicePill({
       aria-label={`Selected voice: ${name}`}
     >
       <div className={cn("size-4 shrink-0 rounded-full", color)} aria-hidden />
-      <span className="text-sm font-medium truncate max-w-[200px]">
+      <span className={cn("text-sm font-medium truncate", fullWidth ? "min-w-0 flex-1" : "max-w-[200px]")}>
         {name}
       </span>
     </div>

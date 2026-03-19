@@ -38,12 +38,17 @@ export function BottomBar({
   return (
     <footer
       className={cn(
-        "fixed bottom-0 left-0 z-10 shrink-0 border-t right-0 sm:right-80 lg:right-96"
+        "fixed bottom-0 left-0 z-10 shrink-0 border-t right-0 min-[600px]:right-80 lg:right-96"
       )}
       style={{ borderColor: "var(--app-border)", backgroundColor: "var(--app-sidebar-bg)" }}
       role="contentinfo"
     >
-      <div className="flex items-center justify-end gap-4 px-4 py-3 sm:px-6">
+      <div
+        className={cn(
+          "flex w-full items-center gap-4 px-4 py-3 sm:px-6",
+          status === "complete" ? "justify-start" : "justify-end"
+        )}
+      >
         {status === "idle" && (
           <>
             <p
@@ -68,7 +73,7 @@ export function BottomBar({
         )}
 
         {status === "converting" && (
-          <div className="flex w-full max-w-md items-center gap-4">
+          <>
             <p
               className="text-sm font-medium min-w-0 truncate"
               style={{ color: "var(--app-text-muted)" }}
@@ -83,11 +88,11 @@ export function BottomBar({
             >
               <ConvertingSpinner progress={progress} />
             </div>
-          </div>
+          </>
         )}
 
         {status === "complete" && downloadUrl && (
-          <div className="flex w-full max-w-2xl items-center gap-4">
+          <div className="flex w-full min-w-0 flex-1 items-center gap-4">
             <AudioPlayer src={downloadUrl} className="min-w-0 flex-1" />
           </div>
         )}

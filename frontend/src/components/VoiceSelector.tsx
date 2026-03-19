@@ -37,16 +37,26 @@ export function VoiceSelector({
     >
       {voices.map((v, i) => {
         const isSelected = selectedId === v.id;
+        const isVoiceDisabled = v.enabled === false || (v.enabled == null && !v.preview_url);
+        const isDisabled = disabled || isVoiceDisabled;
         const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
         return (
           <div
             key={v.id}
             role="option"
             aria-selected={isSelected}
-            tabIndex={disabled ? -1 : 0}
-            onClick={() => onSelect(v.id)}
+            aria-disabled={isVoiceDisabled}
+            tabIndex={isDisabled ? -1 : 0}
+            onClick={(e) => {
+              if (isVoiceDisabled) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+              }
+              onSelect(v.id);
+            }}
             onKeyDown={(e) => {
-              if (disabled) return;
+              if (isDisabled || isVoiceDisabled) return;
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 onSelect(v.id);
@@ -54,8 +64,11 @@ export function VoiceSelector({
             }}
             className={cn(
               "flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all",
-              "hover:border-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300/50 dark:hover:border-neutral-600 dark:focus:ring-neutral-500/50",
-              disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+              "focus:outline-none focus:ring-2 focus:ring-stone-300/50 dark:focus:ring-neutral-500/50",
+              isVoiceDisabled
+                ? "cursor-not-allowed opacity-50 pointer-events-none"
+                : "cursor-pointer hover:border-stone-400 dark:hover:border-neutral-600",
+              disabled && !isVoiceDisabled && "cursor-not-allowed opacity-60",
               isSelected && "shadow-sm"
             )}
             style={{
@@ -81,7 +94,7 @@ export function VoiceSelector({
                   <Check className="size-3.5" strokeWidth={3} />
                 </div>
               )}
-              {v.preview_url && (
+              {v.preview_url && v.enabled !== false && (
                 <PreviewButton voiceId={v.id} voiceName={v.name} />
               )}
             </div>

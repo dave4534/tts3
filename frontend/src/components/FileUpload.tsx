@@ -87,7 +87,7 @@ export function FileUpload({
     <div
       data-upload-zone
       className={cn(
-        "fixed left-4 right-4 z-[9] flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-6 transition-colors sm:left-6 sm:right-[calc(20rem+1.5rem)] lg:right-[calc(24rem+1.5rem)]",
+        "fixed left-4 right-4 z-[9] flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-6 transition-colors min-[600px]:left-6 min-[600px]:right-[calc(20rem+1.5rem)] lg:right-[calc(24rem+1.5rem)]",
         "cursor-pointer hover:border-opacity-80",
         disabled && "cursor-not-allowed opacity-60",
         className

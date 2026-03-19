@@ -381,11 +381,13 @@ def web() -> "FastAPI":
         for v in voices:
             preview_name = v.get("preview_filename") or v["filename"]
             preview_path = Path(f"/voices/{preview_name}")
+            voice_path = Path(f"/voices/{v['filename']}")
             result.append({
                 "id": v["id"],
                 "name": v["name"],
                 "description": v["description"],
                 "preview_url": f"/voices/preview/{v['id']}" if preview_path.exists() else None,
+                "enabled": voice_path.exists(),
             })
         lucy_preview = Path("/voices/lucy-preview.mp3")
         result.insert(0, {
@@ -393,6 +395,7 @@ def web() -> "FastAPI":
             "name": "Lucy (dev)",
             "description": "Sample voice for development",
             "preview_url": "/voices/preview/lucy" if lucy_preview.exists() else None,
+            "enabled": True,
         })
         return {"voices": result}
 
