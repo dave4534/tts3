@@ -35,21 +35,14 @@ export function TextInput({
         placeholder={placeholder}
         disabled={disabled}
         rows={8}
+        style={{ backgroundColor: "transparent", color: "var(--app-text)", paddingLeft: 0, paddingRight: 0 }}
         className={cn(
-          "w-full rounded-xl border bg-white px-4 py-3 pr-32 text-base transition-colors placeholder:text-stone-400",
-          "focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-teal-400",
+          "textarea-scroll w-full resize-none border-0 px-0 py-3 text-base transition-colors app-placeholder outline-none",
+          "placeholder:opacity-70",
           "disabled:cursor-not-allowed disabled:opacity-60",
-          overLimit ? "border-red-400" : "border-stone-200"
+          overLimit && "ring-2 ring-red-400 ring-inset dark:ring-red-500"
         )}
       />
-      <p
-        className={cn(
-          "absolute bottom-3 right-3 text-sm tabular-nums",
-          overLimit ? "text-red-600 font-medium" : "text-stone-500"
-        )}
-      >
-        {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} words
-      </p>
     </div>
   );
 }

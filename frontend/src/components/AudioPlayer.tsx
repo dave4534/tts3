@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { RotateCcw, Play, Pause, RotateCw } from "lucide-react";
 
 interface AudioPlayerProps {
   src: string;
@@ -47,6 +48,12 @@ export function AudioPlayer({ src, className }: AudioPlayerProps) {
     else el.pause();
   };
 
+  const skip = (delta: number) => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + delta));
+  };
+
   const seek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const el = audioRef.current;
     if (!el) return;
@@ -55,39 +62,66 @@ export function AudioPlayer({ src, className }: AudioPlayerProps) {
     setCurrentTime(t);
   };
 
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
-    <div className={cn("space-y-3", className)}>
+    <div
+      className={cn(
+        "flex w-full flex-col items-center gap-3",
+        className
+      )}
+    >
       <audio ref={audioRef} src={src} preload="metadata" />
-      <div className="flex items-center gap-3">
+      <div className="flex w-full items-center justify-center gap-4">
+        <button
+          type="button"
+          onClick={() => skip(-10)}
+          aria-label="Rewind 10 seconds"
+          className="flex flex-col items-center justify-center gap-0.5 transition-colors"
+          style={{ color: "var(--app-text-muted)" }}
+        >
+          <RotateCcw className="size-5" strokeWidth={2} />
+          <span className="text-[10px] font-medium tabular-nums">10</span>
+        </button>
         <button
           type="button"
           onClick={toggle}
           aria-label={playing ? "Pause" : "Play"}
-          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white hover:bg-amber-600"
+          className="flex size-12 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-90"
+          style={{ backgroundColor: "var(--app-text)", color: "var(--app-sidebar-bg)" }}
         >
           {playing ? (
-            <svg className="size-5" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="6" y="4" width="4" height="16" rx="1" />
-              <rect x="14" y="4" width="4" height="16" rx="1" />
-            </svg>
+            <Pause className="size-6 fill-current" strokeWidth={0} />
           ) : (
-            <svg className="size-5 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
-            </svg>
+            <Play className="size-6 fill-current ml-0.5" strokeWidth={0} />
           )}
         </button>
-        <div className="min-w-0 flex-1">
-          <input
-            type="range"
-            min={0}
-            max={duration || 100}
-            value={currentTime}
-            onChange={seek}
-            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-stone-200 [&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-500"
-          />
-          <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
-            {formatTime(currentTime)} / {formatTime(duration || 0)}
-          </p>
+        <button
+          type="button"
+          onClick={() => skip(10)}
+          aria-label="Forward 10 seconds"
+          className="flex flex-col items-center justify-center gap-0.5 transition-colors"
+          style={{ color: "var(--app-text-muted)" }}
+        >
+          <RotateCw className="size-5" strokeWidth={2} />
+          <span className="text-[10px] font-medium tabular-nums">10</span>
+        </button>
+      </div>
+      <div className="flex w-full flex-col gap-1">
+        <input
+          type="range"
+          min={0}
+          max={duration || 100}
+          value={currentTime}
+          onChange={seek}
+          className="h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--app-text)] [&::-moz-range-thumb]:bg-[var(--app-text)]"
+          style={{
+            background: `linear-gradient(to right, var(--app-text) 0%, var(--app-text) ${progressPercent}%, var(--app-text-muted) ${progressPercent}%, var(--app-text-muted) 100%)`,
+          }}
+        />
+        <div className="flex justify-between text-xs tabular-nums" style={{ color: "var(--app-text-muted)" }}>
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration || 0)}</span>
         </div>
       </div>
     </div>

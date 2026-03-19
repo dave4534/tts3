@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getPreviewUrl, type Voice } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Play, Pause, Check } from "lucide-react";
+import { AVATAR_COLORS } from "./SelectedVoicePill";
 
 interface VoiceSelectorProps {
   voices: Voice[];
@@ -22,7 +23,7 @@ export function VoiceSelector({
 }: VoiceSelectorProps) {
   if (loading) {
     return (
-      <div className={cn("text-stone-500 text-sm", className)}>
+      <div className={cn("text-sm", className)} style={{ color: "var(--app-text-muted)" }}>
         Loading voices...
       </div>
     );
@@ -30,15 +31,13 @@ export function VoiceSelector({
 
   return (
     <div
-      className={cn(
-        "grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3",
-        className
-      )}
+      className={cn("flex flex-col gap-2", className)}
       role="listbox"
       aria-label="Select a voice"
     >
-      {voices.map((v) => {
+      {voices.map((v, i) => {
         const isSelected = selectedId === v.id;
+        const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
         return (
           <div
             key={v.id}
@@ -54,28 +53,34 @@ export function VoiceSelector({
               }
             }}
             className={cn(
-              "flex flex-col rounded-xl border-2 p-4 text-left transition-all min-h-[120px] bg-white",
-              "hover:border-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300/50",
+              "flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all",
+              "hover:border-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300/50 dark:hover:border-neutral-600 dark:focus:ring-neutral-500/50",
               disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
-              isSelected
-                ? "border-teal-600 shadow-sm"
-                : "border-stone-200"
+              isSelected && "shadow-sm"
             )}
+            style={{
+              backgroundColor: "var(--app-surface)",
+              borderColor: isSelected ? "var(--app-accent)" : "var(--app-border)",
+              color: "var(--app-text)",
+            }}
           >
-            <div className="flex justify-end mb-2 min-h-6">
-              {isSelected ? (
+            <div
+              className={cn(
+                "size-10 shrink-0 rounded-full",
+                avatarColor
+              )}
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1" style={{ color: "var(--app-text)" }}>
+              <p className="font-semibold truncate">{v.name}</p>
+              <p className="text-sm truncate" style={{ color: "var(--app-text-muted)" }}>{v.description}</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {isSelected && (
                 <div className="flex size-6 items-center justify-center rounded-full bg-teal-600 text-white">
                   <Check className="size-3.5" strokeWidth={3} />
                 </div>
-              ) : (
-                <div className="size-6" aria-hidden />
               )}
-            </div>
-            <div className="mt-auto flex items-end justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-stone-900 truncate">{v.name}</p>
-                <p className="text-sm text-stone-600 truncate">{v.description}</p>
-              </div>
               {v.preview_url && (
                 <PreviewButton voiceId={v.id} voiceName={v.name} />
               )}
@@ -134,7 +139,11 @@ function PreviewButton({
       <button
         type="button"
         onClick={play}
-        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-stone-600 shadow-sm hover:bg-white hover:text-teal-600"
+        className="flex size-9 shrink-0 items-center justify-center rounded-full shadow-sm hover:opacity-90"
+        style={{
+          backgroundColor: "var(--app-sidebar-bg)",
+          color: "var(--app-accent)",
+        }}
         aria-label={`Preview ${voiceName}`}
       >
         {isPlaying ? (

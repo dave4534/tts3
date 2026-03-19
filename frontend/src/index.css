@@ -7,7 +7,6 @@
 
 :root {
   --text: #6b6375;
-  --text-h: #08060d;
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
@@ -24,7 +23,7 @@
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -37,25 +36,7 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
+/* Theme is controlled by .light / .dark class on html — no media query override */
 
 #root {
   width: 100%;
@@ -69,7 +50,7 @@
 
 body {
   margin: 0;
-  background-color: #f9f7f2;
+  background-color: var(--app-bg, #f9f7f2);
 }
 
 h1,
@@ -151,7 +132,48 @@ code {
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
   }
+  :root, .light {
+    color-scheme: light;
+    --text-h: #171717;
+    --app-bg: #f9f7f2;
+    --app-sidebar-bg: #ffffff;
+    --app-aside-bg: rgba(250, 250, 249, 0.5); /* stone-50/50 */
+    --app-surface: #ffffff;
+    --app-input-bg: #ffffff;
+    --app-border: #e5e5e5;
+    --app-text: #171717;
+    --app-text-muted: #525252;
+    --app-placeholder: #57534e; /* stone-600, 4.5:1+ on white */
+    --app-accent: #0f766e; /* teal-700, WCAG AA on light bg */
+    --app-accent-hover: #115e59; /* teal-800 */
+    --app-upload-zone-bg: rgba(245, 245, 244, 0.5); /* stone-100/50 */
+    --app-upload-zone-border: #d6d3d1; /* stone-300 */
+    --app-upload-zone-border-drag: #2dd4bf; /* teal-400 */
+    --app-upload-zone-bg-drag: rgba(204, 251, 241, 0.5); /* teal-100/50 */
+    --app-upload-icon-bg: #ccfbf1; /* teal-100 */
+    --app-upload-icon: #0f766e; /* teal-700 */
+  }
   .dark {
+    color-scheme: dark;
+    /* ElevenLabs-style dark palette */
+    --text-h: #e5e5e5;
+    --app-bg: #0d0d0d;
+    --app-sidebar-bg: #171717;
+    --app-aside-bg: #171717;
+    --app-surface: #262626;
+    --app-input-bg: #171717;
+    --app-border: #262626;
+    --app-placeholder: #a3a3a3;
+    --app-accent: #2dd4bf; /* teal-400 */
+    --app-accent-hover: #5eead4; /* teal-300 */
+    --app-upload-zone-bg: rgba(23, 23, 23, 0.5);
+    --app-upload-zone-border: #404040;
+    --app-upload-zone-border-drag: #2dd4bf;
+    --app-upload-zone-bg-drag: rgba(45, 212, 191, 0.15);
+    --app-upload-icon-bg: rgba(19, 78, 74, 0.5); /* teal-900/50 */
+    --app-upload-icon: #2dd4bf;
+    --app-text: #e5e5e5;
+    --app-text-muted: #a3a3a3;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -197,4 +219,44 @@ code {
   html {
     @apply font-sans;
   }
+}
+
+/* Theme-aware placeholder (WCAG contrast) */
+.app-placeholder::placeholder {
+  color: var(--app-placeholder);
+}
+
+/* Accessible scrollbar for textarea (white track, dark thumb, ~4.5:1 contrast) */
+.textarea-scroll {
+  scrollbar-color: #78716c #f5f5f4; /* stone-500 on stone-100 */
+  scrollbar-width: thin;
+}
+.textarea-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+.textarea-scroll::-webkit-scrollbar-track {
+  background: #f5f5f4; /* stone-100 */
+  border-radius: 0 4px 4px 0;
+}
+.textarea-scroll::-webkit-scrollbar-thumb {
+  background: #78716c; /* stone-500, ~4.6:1 on stone-100 */
+  border-radius: 5px;
+  border: 2px solid #f5f5f4;
+}
+.textarea-scroll::-webkit-scrollbar-thumb:hover {
+  background: #57534e; /* stone-600 */
+}
+
+.dark .textarea-scroll {
+  scrollbar-color: #a3a3a3 #262626;
+}
+.dark .textarea-scroll::-webkit-scrollbar-track {
+  background: #262626;
+}
+.dark .textarea-scroll::-webkit-scrollbar-thumb {
+  background: #a3a3a3;
+  border-color: #262626;
+}
+.dark .textarea-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d4d4d4;
 }

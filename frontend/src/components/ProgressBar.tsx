@@ -17,8 +17,8 @@ export function ProgressBar({ progress, state, className }: ProgressBarProps) {
 
   return (
     <div className={cn("space-y-2", className)}>
-      <p className="text-sm font-medium text-stone-700">{label} {progress}%</p>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200">
+      <p className="text-sm font-medium text-stone-700 dark:text-neutral-300">{label} {progress}%</p>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-neutral-700">
         <div
           className="h-full rounded-full bg-teal-600 transition-[width] duration-300"
           style={{ width: `${progress}%` }}

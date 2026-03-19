@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Upload } from "lucide-react";
+import { FilePlus } from "lucide-react";
 
 const MAX_MB = 10;
 const ACCEPT = ".txt,.pdf";
@@ -84,7 +84,24 @@ export function FileUpload({
   }, []);
 
   return (
-    <div className={cn("w-full", className)}>
+    <div
+      data-upload-zone
+      className={cn(
+        "fixed left-4 right-4 z-[9] flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-6 transition-colors sm:left-6 sm:right-[calc(20rem+1.5rem)] lg:right-[calc(24rem+1.5rem)]",
+        "cursor-pointer hover:border-opacity-80",
+        disabled && "cursor-not-allowed opacity-60",
+        className
+      )}
+      style={{
+        bottom: "calc(52px + 40px)",
+        backgroundColor: isDragging ? "var(--app-upload-zone-bg-drag)" : "var(--app-upload-zone-bg)",
+        borderColor: isDragging ? "var(--app-upload-zone-border-drag)" : "var(--app-upload-zone-border)",
+      }}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onClick={() => !disabled && inputRef.current?.click()}
+    >
       <input
         ref={inputRef}
         type="file"
@@ -94,38 +111,37 @@ export function FileUpload({
         className="hidden"
       />
       <div
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onClick={() => !disabled && inputRef.current?.click()}
-        className={cn(
-          "w-full",
-          "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-6 transition-colors",
-          "cursor-pointer",
-          isDragging
-            ? "border-teal-400 bg-teal-50/50"
-            : "border-stone-300 bg-stone-50/50 hover:border-stone-400",
-          disabled && "cursor-not-allowed opacity-60"
-        )}
+        className="flex size-12 items-center justify-center rounded-lg"
+        style={{ backgroundColor: "var(--app-surface)", color: "var(--app-text)" }}
       >
-        <div className="flex size-10 items-center justify-center rounded-full bg-teal-100 text-teal-600">
-          <Upload className="size-5" />
-        </div>
-        <p className="text-sm text-stone-600">
-          Drag & drop a .txt or .pdf file or{" "}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              inputRef.current?.click();
-            }}
-            disabled={disabled}
-            className="font-medium text-teal-600 underline hover:text-teal-700"
-          >
-            Choose file
-          </button>
-        </p>
+        <FilePlus className="size-6" strokeWidth={2} />
       </div>
+      <p className="text-center text-sm font-semibold" style={{ color: "var(--app-text)" }}>
+        Click to upload, or drag and drop
+      </p>
+      <p className="text-center text-sm" style={{ color: "var(--app-text-muted)" }}>
+        .txt or .pdf files up to {MAX_MB}MB each
+      </p>
+      <div className="flex items-center gap-2">
+        <span className="text-xs" style={{ color: "var(--app-text-muted)" }}>
+          or
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          inputRef.current?.click();
+        }}
+        disabled={disabled}
+        className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:opacity-90"
+        style={{
+          borderColor: "var(--app-border)",
+          color: "var(--app-text)",
+        }}
+      >
+        Choose file
+      </button>
     </div>
   );
 }
