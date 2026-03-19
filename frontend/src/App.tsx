@@ -12,6 +12,10 @@ import { useConvert } from "@/hooks/useConvert";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemeToggleIcon } from "@/components/ThemeToggleIcon";
 import { cn } from "@/lib/utils";
+import {
+  MAIN_PADDING_BOTTOM_IDLE_PX,
+  MAIN_PADDING_BOTTOM_WITH_TEXT_PX,
+} from "@/lib/layout-constants";
 
 function App() {
   const [text, setText] = useState("");
@@ -100,6 +104,9 @@ function App() {
         ? "converting"
         : "idle";
 
+  const showFileUpload =
+    bottomBarStatus === "idle" && text.trim().length === 0;
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <header className="relative shrink-0 flex h-[80px] items-center border-b pl-4 pr-4 sm:pl-6 sm:pr-6" style={{ borderColor: 'var(--app-border)', backgroundColor: 'var(--app-sidebar-bg)' }}>
@@ -126,9 +133,13 @@ style={{ color: "var(--app-text)" }}
         <div className="flex min-h-0 flex-1 flex-col min-w-0">
           <main
             className={cn(
-              "flex min-h-[40vh] flex-1 flex-col overflow-y-auto px-4 py-6 sm:min-h-0 sm:px-6",
-              "pb-6"
+              "flex min-h-[40vh] flex-1 flex-col overflow-hidden px-4 pt-6 sm:min-h-0 sm:px-6"
             )}
+            style={{
+              paddingBottom: showFileUpload
+                ? `${MAIN_PADDING_BOTTOM_IDLE_PX}px`
+                : `${MAIN_PADDING_BOTTOM_WITH_TEXT_PX}px`,
+            }}
           >
             {(convertState.status === "failed" || apiError) && (
               <div className="mb-4 w-full rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/30">
@@ -154,8 +165,7 @@ style={{ color: "var(--app-text)" }}
             )}
             <section
               className={cn(
-                "flex w-full flex-col gap-6",
-                bottomBarStatus !== "idle" && "min-h-0 flex-1"
+                "flex min-h-0 w-full flex-1 flex-col gap-6"
               )}
             >
               <div className="flex items-center justify-between gap-3 max-[599px]:hidden">
@@ -206,15 +216,12 @@ style={{ color: "var(--app-text)" }}
                 onChange={setText}
                 disabled={isConverting}
                 className="w-full pl-0"
-                hasDragDropBelow={bottomBarStatus === "idle"}
+                hasDragDropBelow={showFileUpload}
               />
               {pendingFile && (
-                <p className="text-sm" style={{ color: "var(--app-text-muted)" }}>
+                <p className="shrink-0 text-sm" style={{ color: "var(--app-text-muted)" }}>
                   File: {pendingFile.name}
                 </p>
-              )}
-              {bottomBarStatus === "idle" && (
-                <div className="min-h-[300px] shrink-0" aria-hidden />
               )}
             </section>
           </main>
@@ -257,7 +264,7 @@ style={{ color: "var(--app-text)" }}
         </aside>
       </div>
 
-      {bottomBarStatus === "idle" && (
+      {showFileUpload && (
         <FileUpload
           onFileSelect={handleFileSelect}
           onError={setApiError}

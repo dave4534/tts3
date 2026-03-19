@@ -31,8 +31,7 @@ export function TextInput({
   return (
     <div
       className={cn(
-        "relative",
-        !hasDragDropBelow && "flex min-h-0 flex-1 flex-col",
+        "relative flex min-h-0 flex-1 flex-col",
         className
       )}
     >
@@ -42,7 +41,6 @@ export function TextInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        rows={hasDragDropBelow ? 8 : undefined}
         style={{
           backgroundColor: "transparent",
           color: "var(--app-text)",
@@ -53,7 +51,7 @@ export function TextInput({
           "textarea-scroll w-full resize-none border-0 px-0 py-3 text-base transition-colors app-placeholder outline-none",
           "placeholder:opacity-70",
           "disabled:cursor-not-allowed disabled:opacity-60",
-          !hasDragDropBelow && "min-h-0 flex-1",
+          hasDragDropBelow ? "absolute inset-0 h-full min-h-0 overflow-y-auto" : "min-h-0 flex-1",
           overLimit && "ring-2 ring-red-400 ring-inset dark:ring-red-500"
         )}
       />

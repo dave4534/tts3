@@ -2,10 +2,17 @@
 
 > **This is the canonical rules file.** Product spec: `docs/superpowers/specs/2026-03-12-tts-web-app-prd.md`. For questions about product, read the PRD. For dev rules, read this file.
 
+## MANDATORY — Before Completing Any Task
+
+1. **Backend (Modal) changed?** → State "Redeploy required" and run: `python3 -m modal deploy modal_app/main.py` from project root.
+2. **Frontend changed?** → State "Restart needed" and run: `npm run dev` in `frontend/` for local testing.
+3. **Never** ask the user to run these commands. Do them automatically.
+
 ## Project Overview
 Text-to-speech web app. Users paste text or upload files, select a voice, convert to MP3.
 
 ## Task Tracking
+- Before marking done: follow the MANDATORY operational checklist above.
 - Read `TASKS.md` for the current build checklist
 - Follow the phase and task order in `TASKS.md` strictly. Do not suggest skipping phases or doing tasks out of order (e.g. Phase 3 before Phase 2). Respect dependencies: later phases often depend on outputs of earlier phases.
 - After completing each task: describe how to test it, then ask if the user wants you to update `TASKS.md`, `CHANGELOG.md`, and push to GitHub. Do not update or push until the user confirms.

@@ -57,6 +57,12 @@ Reference for AI coding assistants working on this project.
 
 ---
 
+## Frontend Layout
+
+- **Empty state (no text):** FileUpload zone is shown, fixed 24px above the BottomBar. Text area is small; drag-and-drop is the primary input.
+- **With text (pasted or from file):** FileUpload is hidden. Text area fills the entire left pane between the voice pill and BottomBar, with 24px padding above and below. Only the textarea scrolls.
+- **Layout constants:** `frontend/src/lib/layout-constants.ts` — edit to adjust spacing. FileUpload shows only when `bottomBarStatus === "idle" && text.trim().length === 0`.
+
 ## Common Pitfalls
 
 1. **Don't create a separate backend service** — everything runs on Modal

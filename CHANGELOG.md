@@ -40,3 +40,4 @@ Format: `[Task ID] One-line summary`
 - [3.11] Add optional Chatterbox conditioning params (`cfg_weight`/`exaggeration`/`temperature`) for tuned previews and rename the `aba` persona card to "Gentle young man"
 - [4.14] Voicecraft UI polish: FileUpload full-width match; voice cards gray hover, white bg, no waveform icon, checkmark top-right
 - [4.15] Redesign of entire UI: consistent 24px left alignment (title, subtitle, selected voice, placeholder, drag-drop), upload zone 40px above bottom bar, removed stray footer border, theme toggle
+- [4.16] Layout: show FileUpload only when text empty; when text pasted, hide upload zone and text area fills pane with 24px gap above bottom bar; added layout-constants.ts for spacing

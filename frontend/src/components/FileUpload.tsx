@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { FilePlus } from "lucide-react";
+import { UPLOAD_ZONE_BOTTOM_PX } from "@/lib/layout-constants";
 
 const MAX_MB = 10;
 const ACCEPT = ".txt,.pdf";
@@ -10,6 +11,8 @@ interface FileUploadProps {
   onError: (message: string) => void;
   disabled?: boolean;
   className?: string;
+  /** When true, renders in document flow instead of fixed overlay (prevents text overlap) */
+  embedded?: boolean;
 }
 
 export function FileUpload({
@@ -17,6 +20,7 @@ export function FileUpload({
   onError,
   disabled,
   className,
+  embedded = false,
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -87,13 +91,16 @@ export function FileUpload({
     <div
       data-upload-zone
       className={cn(
-        "fixed left-4 right-4 z-[9] flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-6 transition-colors min-[600px]:left-6 min-[600px]:right-[calc(20rem+1.5rem)] lg:right-[calc(24rem+1.5rem)]",
+        "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-6 transition-colors min-h-[220px]",
         "cursor-pointer hover:border-opacity-80",
         disabled && "cursor-not-allowed opacity-60",
+        embedded
+          ? "w-full shrink-0"
+          : "fixed left-4 right-4 z-[9] min-[600px]:left-6 min-[600px]:right-[calc(20rem+1.5rem)] lg:right-[calc(24rem+1.5rem)]",
         className
       )}
       style={{
-        bottom: "calc(52px + 40px)",
+        ...(embedded ? {} : { bottom: `${UPLOAD_ZONE_BOTTOM_PX}px` }),
         backgroundColor: isDragging ? "var(--app-upload-zone-bg-drag)" : "var(--app-upload-zone-bg)",
         borderColor: isDragging ? "var(--app-upload-zone-border-drag)" : "var(--app-upload-zone-border)",
       }}

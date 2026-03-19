@@ -1,0 +1,12 @@
+---
+description: After frontend changes, start/restart dev server
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# Frontend Operational Rule
+
+When you modify files in `frontend/`, you MUST:
+
+1. State that a restart is needed for local testing
+2. Run `npm run dev` in the frontend directory
