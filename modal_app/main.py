@@ -35,7 +35,7 @@ def _normalize_text(text: str) -> str:
     return text.strip()
 
 
-def chunk_text(text: str, max_chars: int = 300) -> list[str]:
+def chunk_text(text: str, max_chars: int = 1000) -> list[str]:
     """
     Split text into chunks of ~max_chars, breaking at sentence boundaries.
     """
@@ -168,6 +168,14 @@ VOICES_DIR = "/voices"
 
 VOICES_CUSTOM_PATH = "/voices-custom"
 
+
+def _download_chatterbox_weights():
+    """Download Chatterbox model weights at image build time. Baked into image to eliminate HF download on cold start."""
+    from chatterbox.tts import ChatterboxTTS
+
+    ChatterboxTTS.from_pretrained(device="cpu")  # Caches weights to disk; no GPU needed
+
+
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("wget", "unzip", "ffmpeg")
@@ -180,6 +188,7 @@ image = (
     .run_commands(
         "pip install numpy && pip install --no-build-isolation chatterbox-tts==0.1.3 pydub torch torchaudio"
     )
+    .run_function(_download_chatterbox_weights, secrets=[modal.Secret.from_name("hf-token")])
     .add_local_dir("voices", VOICES_CUSTOM_PATH)
 )
 
@@ -197,7 +206,8 @@ web_image = (
         "python-multipart==0.0.18",
         "pymupdf==1.25.1",
     )
-    .add_local_dir("voices", "/voices")
+    .add_local_dir("voices", "/voices", copy=True)
+    .run_commands("sha256sum /voices/voices.json | cut -c1-12 > /tmp/voices-hash && cat /tmp/voices-hash")
 )
 
 job_store = modal.Dict.from_name("tts-jobs", create_if_missing=True)
@@ -376,6 +386,8 @@ def web() -> "FastAPI":
 
     @api.get("/voices")
     def list_voices() -> dict:
+        from fastapi.responses import Response
+
         voices = _load_voices()
         result = []
         for v in voices:
@@ -397,7 +409,11 @@ def web() -> "FastAPI":
             "preview_url": "/voices/preview/lucy" if lucy_preview.exists() else None,
             "enabled": True,
         })
-        return {"voices": result}
+        return Response(
+            content=json.dumps({"voices": result}),
+            media_type="application/json",
+            headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
+        )
 
     @api.get("/voices/preview/{voice_id}")
     def voice_preview(voice_id: str):
@@ -660,11 +676,13 @@ with image.imports():
     gpu="a10g",
     image=image,
     secrets=[modal.Secret.from_name("hf-token")],
+    enable_memory_snapshot=True,
+    experimental_options={"enable_gpu_snapshot": True},
 )
 class ChatterboxTTS:
     """GPU-backed TTS: generates audio from text + voice reference clip."""
 
-    @modal.enter()
+    @modal.enter(snap=True)
     def load_model(self) -> None:
         from chatterbox.tts import ChatterboxTTS as _ChatterboxTTS
 
@@ -683,7 +701,7 @@ class ChatterboxTTS:
         Generate audio from a text chunk and voice reference clip.
 
         Args:
-            text: Input text (up to ~300 chars per chunk).
+            text: Input text (up to ~1000 chars per chunk).
             voice_path: Path to 6-10 second WAV reference clip.
             cfg_weight: Conditioning strength for the reference clip.
             exaggeration: Emotion/prosody exaggeration parameter.
@@ -717,7 +735,7 @@ class ChatterboxTTS:
         Generate audio for multiple chunks in parallel; returns segments in input order.
 
         Args:
-            chunks: List of text chunks (each up to ~300 chars).
+            chunks: List of text chunks (each up to ~1000 chars).
             voice_path: Path to 6-10 second WAV reference clip.
             cfg_weight: Conditioning strength for the reference clip.
             exaggeration: Emotion/prosody exaggeration parameter.
@@ -769,7 +787,7 @@ class ChatterboxTTS:
         Generate TTS for chunks in parallel, then stitch into a single MP3.
 
         Args:
-            chunks: List of text chunks (each up to ~300 chars).
+            chunks: List of text chunks (each up to ~1000 chars).
             voice_path: Path to 6-10 second WAV reference clip.
             cfg_weight: Conditioning strength for the reference clip.
             exaggeration: Emotion/prosody exaggeration parameter.

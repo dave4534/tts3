@@ -30,7 +30,7 @@ export async function getHealth(): Promise<{ status: string }> {
 }
 
 export async function getVoices(): Promise<{ voices: Voice[] }> {
-  const res = await fetch(`${API_BASE}/voices`);
+  const res = await fetch(`${API_BASE}/voices`, { cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to fetch voices: ${res.status}`);
   return res.json();
 }

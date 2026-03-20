@@ -87,13 +87,13 @@ export function AudioPlayer({ src, className }: AudioPlayerProps) {
           type="button"
           onClick={toggle}
           aria-label={playing ? "Pause" : "Play"}
-          className="flex size-12 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-90"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-90"
           style={{ backgroundColor: "var(--app-text)", color: "var(--app-sidebar-bg)" }}
         >
           {playing ? (
-            <Pause className="size-6 fill-current" strokeWidth={0} />
+            <Pause className="size-5 fill-current" strokeWidth={0} />
           ) : (
-            <Play className="size-6 fill-current ml-0.5" strokeWidth={0} />
+            <Play className="size-5 fill-current ml-0.5" strokeWidth={0} />
           )}
         </button>
         <button

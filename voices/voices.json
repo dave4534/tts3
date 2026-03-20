@@ -22,6 +22,13 @@
       "preview_filename": "aba-preview.mp3"
     },
     {
+      "id": "mikey",
+      "name": "Mikey",
+      "description": "Friendly, engaging narrator — good for podcasts and casual content",
+      "filename": "Mikey.wav",
+      "preview_filename": "mikey-preview.mp3"
+    },
+    {
       "id": "calm-older-man",
       "name": "Calm older man",
       "description": "Warm, steady, grandfatherly — great for audiobooks",
