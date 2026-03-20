@@ -2,6 +2,8 @@
 
 Use this checklist whenever you add a new selectable voice.
 
+**Note:** `Lucy (dev)` is in `voices.json` with `"builtin": true`. Built-in voices use the Chatterbox sample and don't require a WAV file in `voices/`.
+
 1. **Pick/prepare the clip**
    - Source audio from an open-licensed dataset (e.g. LibriVox, Common Voice) or a curated internal file.
    - Trim a **6–10 second** segment with consistent tone and minimal background noise.

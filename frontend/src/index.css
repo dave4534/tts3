@@ -152,6 +152,10 @@ code {
     --app-upload-zone-bg-drag: rgba(204, 251, 241, 0.5); /* teal-100/50 */
     --app-upload-icon-bg: #ccfbf1; /* teal-100 */
     --app-upload-icon: #0f766e; /* teal-700 */
+    /* Disabled/processing button: WCAG AA compliant */
+    --app-disabled-btn-bg: #e7e5e4; /* stone-200 */
+    --app-disabled-btn-text: #292524; /* stone-800, 4.5:1+ on stone-200 */
+    --app-disabled-btn-progress: #d6d3d1; /* stone-300 */
   }
   .dark {
     color-scheme: dark;
@@ -174,6 +178,10 @@ code {
     --app-upload-icon: #2dd4bf;
     --app-text: #e5e5e5;
     --app-text-muted: #a3a3a3;
+    /* Disabled/processing button: WCAG AA compliant */
+    --app-disabled-btn-bg: #404040; /* neutral-700 */
+    --app-disabled-btn-text: #d4d4d4; /* neutral-300, 4.5:1+ on neutral-700 */
+    --app-disabled-btn-progress: #525252; /* neutral-600 */
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);

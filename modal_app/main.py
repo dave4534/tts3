@@ -5,6 +5,7 @@ FastAPI API (via @modal.asgi_app) + Chatterbox GPU workers.
 Serves file parsing, chunking, TTS generation, and audio stitching.
 """
 
+import hashlib
 import io
 import json
 import re
@@ -198,6 +199,10 @@ app = modal.App("tts-web-app", image=image)
 MAX_FILE_MB = 10
 MAX_WORDS = 20_000
 
+# Hash voices.json at build time so image rebuilds when it changes (avoids stale cache)
+_VOICES_JSON_PATH = Path(__file__).resolve().parent.parent / "voices" / "voices.json"
+_VOICES_HASH = hashlib.sha256(_VOICES_JSON_PATH.read_bytes()).hexdigest()[:12] if _VOICES_JSON_PATH.exists() else "unknown"
+
 web_image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install(
@@ -207,7 +212,7 @@ web_image = (
         "pymupdf==1.25.1",
     )
     .add_local_dir("voices", "/voices", copy=True)
-    .run_commands("sha256sum /voices/voices.json | cut -c1-12 > /tmp/voices-hash && cat /tmp/voices-hash")
+    .run_commands(f"echo voices-hash-{_VOICES_HASH} && sha256sum /voices/voices.json | cut -c1-12")
 )
 
 job_store = modal.Dict.from_name("tts-jobs", create_if_missing=True)
@@ -391,24 +396,27 @@ def web() -> "FastAPI":
         voices = _load_voices()
         result = []
         for v in voices:
-            preview_name = v.get("preview_filename") or v["filename"]
-            preview_path = Path(f"/voices/{preview_name}")
-            voice_path = Path(f"/voices/{v['filename']}")
-            result.append({
-                "id": v["id"],
-                "name": v["name"],
-                "description": v["description"],
-                "preview_url": f"/voices/preview/{v['id']}" if preview_path.exists() else None,
-                "enabled": voice_path.exists(),
-            })
-        lucy_preview = Path("/voices/lucy-preview.mp3")
-        result.insert(0, {
-            "id": "lucy",
-            "name": "Lucy (dev)",
-            "description": "Sample voice for development",
-            "preview_url": "/voices/preview/lucy" if lucy_preview.exists() else None,
-            "enabled": True,
-        })
+            if v.get("builtin"):
+                preview_name = v.get("preview_filename", "lucy-preview.mp3")
+                preview_path = Path(f"/voices/{preview_name}")
+                result.append({
+                    "id": v["id"],
+                    "name": v["name"],
+                    "description": v["description"],
+                    "preview_url": f"/voices/preview/{v['id']}" if preview_path.exists() else None,
+                    "enabled": True,
+                })
+            else:
+                preview_name = v.get("preview_filename") or v["filename"]
+                preview_path = Path(f"/voices/{preview_name}")
+                voice_path = Path(f"/voices/{v['filename']}")
+                result.append({
+                    "id": v["id"],
+                    "name": v["name"],
+                    "description": v["description"],
+                    "preview_url": f"/voices/preview/{v['id']}" if preview_path.exists() else None,
+                    "enabled": voice_path.exists(),
+                })
         return Response(
             content=json.dumps({"voices": result}),
             media_type="application/json",
@@ -454,8 +462,6 @@ def web() -> "FastAPI":
         return data["voices"]
 
     def _validate_voice_id(voice_id: str) -> None:
-        if voice_id == "lucy":
-            return  # Dev fallback
         voices = _load_voices()
         if not any(v["id"] == voice_id for v in voices):
             raise HTTPException(400, f"Unknown voice_id: {voice_id}")

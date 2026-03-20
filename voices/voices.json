@@ -1,8 +1,15 @@
 {
   "voices": [
     {
-      "id": "ram-dass",
-      "name": "Ram Dass-style voice",
+      "id": "lucy",
+      "name": "Lucy",
+      "description": "Sample voice for development",
+      "builtin": true,
+      "preview_filename": "lucy-preview.mp3"
+    },
+    {
+      "id": "Ram Dass",
+      "name": "Ram Dass",
       "description": "Warm, reflective, meditative narrator tone",
       "filename": "Ram-Dass.wav",
       "preview_filename": "ram-dass-preview.mp3"

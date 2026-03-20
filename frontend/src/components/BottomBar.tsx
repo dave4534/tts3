@@ -111,14 +111,23 @@ export function BottomBar({
 
         {status === "converting" && (
           <div
+            role="status"
+            aria-live="polite"
+            aria-label={convertingLabel}
             className={cn(
-              "relative flex h-9 min-w-[180px] shrink-0 items-center justify-center overflow-hidden rounded-full px-6 text-sm font-medium",
-              "bg-teal-600 text-white dark:bg-teal-600"
+              "relative flex h-9 min-w-[180px] shrink-0 items-center justify-center overflow-hidden rounded-full px-6 text-sm font-medium"
             )}
+            style={{
+              backgroundColor: "var(--app-disabled-btn-bg)",
+              color: "var(--app-disabled-btn-text)",
+            }}
           >
             <div
-              className="absolute inset-y-0 left-0 bg-teal-500/80 transition-[width] duration-300 ease-out dark:bg-teal-500/80"
-              style={{ width: isWarmingUp(progressState, progress) ? "0%" : `${progress}%` }}
+              className="absolute inset-y-0 left-0 transition-[width] duration-300 ease-out"
+              style={{
+                width: isWarmingUp(progressState, progress) ? "0%" : `${progress}%`,
+                backgroundColor: "var(--app-disabled-btn-progress)",
+              }}
             />
             <span className="relative z-10">{convertingLabel}</span>
           </div>

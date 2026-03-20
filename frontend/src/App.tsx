@@ -22,7 +22,7 @@ function App() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const { voices, loading: voicesLoading, error: voicesError } = useVoices();
+  const { voices, loading: voicesLoading, error: voicesError, refetch: refetchVoices } = useVoices();
   const { state: convertState, startConvert, reset } = useConvert();
   const { theme, toggleTheme } = useTheme();
 
@@ -70,7 +70,8 @@ function App() {
   const openVoiceSheet = useCallback(() => {
     setPendingVoiceId(voiceId);
     setVoiceSheetOpen(true);
-  }, [voiceId]);
+    refetchVoices();
+  }, [voiceId, refetchVoices]);
 
   const closeVoiceSheet = useCallback(() => {
     setVoiceSheetOpen(false);
