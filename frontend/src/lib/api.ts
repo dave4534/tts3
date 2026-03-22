@@ -85,3 +85,17 @@ export function getDownloadUrl(jobId: string): string {
 export function getPreviewUrl(voiceId: string): string {
   return `${API_BASE}/voices/preview/${voiceId}`;
 }
+
+export async function extractTextFromFile(file: File): Promise<{ text: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${API_BASE}/extract-text`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(body || "Failed to extract text from file");
+  }
+  return res.json();
+}

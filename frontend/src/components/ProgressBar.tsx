@@ -17,10 +17,10 @@ export function ProgressBar({ progress, state, className }: ProgressBarProps) {
 
   return (
     <div className={cn("space-y-2", className)}>
-      <p className="text-sm font-medium text-stone-700 dark:text-neutral-300">{label} {progress}%</p>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-neutral-700">
+      <p className="text-sm font-medium text-muted-foreground">{label} {progress}%</p>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full rounded-full bg-teal-600 transition-[width] duration-300"
+          className="h-full rounded-full bg-primary transition-[width] duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>

@@ -77,8 +77,7 @@ export function AudioPlayer({ src, className }: AudioPlayerProps) {
           type="button"
           onClick={() => skip(-10)}
           aria-label="Rewind 10 seconds"
-          className="flex flex-col items-center justify-center gap-0.5 transition-colors"
-          style={{ color: "var(--app-text-muted)" }}
+          className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground transition-colors"
         >
           <RotateCcw className="size-5" strokeWidth={2} />
           <span className="text-[10px] font-medium tabular-nums">10</span>
@@ -87,8 +86,7 @@ export function AudioPlayer({ src, className }: AudioPlayerProps) {
           type="button"
           onClick={toggle}
           aria-label={playing ? "Pause" : "Play"}
-          className="flex size-10 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "var(--app-text)", color: "var(--app-sidebar-bg)" }}
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-opacity hover:opacity-90"
         >
           {playing ? (
             <Pause className="size-5 fill-current" strokeWidth={0} />
@@ -100,8 +98,7 @@ export function AudioPlayer({ src, className }: AudioPlayerProps) {
           type="button"
           onClick={() => skip(10)}
           aria-label="Forward 10 seconds"
-          className="flex flex-col items-center justify-center gap-0.5 transition-colors"
-          style={{ color: "var(--app-text-muted)" }}
+          className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground transition-colors"
         >
           <RotateCw className="size-5" strokeWidth={2} />
           <span className="text-[10px] font-medium tabular-nums">10</span>
@@ -114,12 +111,12 @@ export function AudioPlayer({ src, className }: AudioPlayerProps) {
           max={duration || 100}
           value={currentTime}
           onChange={seek}
-          className="h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--app-text)] [&::-moz-range-thumb]:bg-[var(--app-text)]"
+          className="h-1 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-foreground [&::-moz-range-thumb]:bg-foreground"
           style={{
-            background: `linear-gradient(to right, var(--app-text) 0%, var(--app-text) ${progressPercent}%, var(--app-text-muted) ${progressPercent}%, var(--app-text-muted) 100%)`,
+            background: `linear-gradient(to right, oklch(var(--foreground)) 0%, oklch(var(--foreground)) ${progressPercent}%, oklch(var(--muted-foreground)) ${progressPercent}%, oklch(var(--muted-foreground)) 100%)`,
           }}
         />
-        <div className="flex justify-between text-xs tabular-nums" style={{ color: "var(--app-text-muted)" }}>
+        <div className="flex justify-between text-xs tabular-nums text-muted-foreground">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration || 0)}</span>
         </div>

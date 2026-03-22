@@ -220,6 +220,23 @@ job_store = modal.Dict.from_name("tts-jobs", create_if_missing=True)
 DEFAULT_VOICE_PATH = f"{VOICES_DIR}/chatterbox-tts-voices/prompts/Lucy.wav"
 
 
+def extract_text_from_bytes(content: bytes, filename: str) -> str:
+    """Extract text from file content. Raises ValueError on size/format error."""
+    if len(content) > MAX_FILE_MB * 1024 * 1024:
+        raise ValueError(f"File exceeds {MAX_FILE_MB} MB limit.")
+    suffix = Path(filename).suffix.lower()
+    if suffix == ".txt":
+        return content.decode("utf-8", errors="replace")
+    if suffix == ".pdf":
+        import fitz
+        doc = fitz.open(stream=content, filetype="pdf")
+        try:
+            return "\n".join(page.get_text() for page in doc)
+        finally:
+            doc.close()
+    raise ValueError("Please upload a .txt or .pdf file")
+
+
 def _resolve_voice_path(voice_id: str) -> str:
     if voice_id == "lucy":
         return DEFAULT_VOICE_PATH
@@ -469,19 +486,24 @@ def web() -> "FastAPI":
     def _extract_text_from_file(file: UploadFile) -> str:
         file.file.seek(0)
         content = file.file.read()
-        if len(content) > MAX_FILE_MB * 1024 * 1024:
-            raise HTTPException(400, f"File exceeds {MAX_FILE_MB} MB limit.")
-        suffix = Path(file.filename or "").suffix.lower()
-        if suffix == ".txt":
-            return content.decode("utf-8", errors="replace")
-        if suffix == ".pdf":
-            import fitz
-            doc = fitz.open(stream=content, filetype="pdf")
-            try:
-                return "\n".join(page.get_text() for page in doc)
-            finally:
-                doc.close()
-        raise HTTPException(400, "Please upload a .txt or .pdf file")
+        try:
+            return extract_text_from_bytes(content, file.filename or "")
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+
+    @api.post("/extract-text")
+    async def extract_text(file: UploadFile = File(...)) -> dict[str, str]:
+        """Extract text from .txt or .pdf for preview. Returns { text: string }."""
+        try:
+            text = _extract_text_from_file(file)
+            return {"text": text}
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(
+                400,
+                "We couldn't extract text from this PDF. Try pasting the text directly.",
+            )
 
     def _process_convert(
         text: str,

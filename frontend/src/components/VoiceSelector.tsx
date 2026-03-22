@@ -23,7 +23,7 @@ export function VoiceSelector({
 }: VoiceSelectorProps) {
   if (loading) {
     return (
-      <div className={cn("text-sm", className)} style={{ color: "var(--app-text-muted)" }}>
+      <div className={cn("text-sm text-muted-foreground", className)}>
         Loading voices...
       </div>
     );
@@ -63,19 +63,15 @@ export function VoiceSelector({
               }
             }}
             className={cn(
-              "flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all",
-              "focus:outline-none focus:ring-2 focus:ring-stone-300/50 dark:focus:ring-neutral-500/50",
+              "flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors",
+              "focus:outline-none focus-visible:outline-2 focus-visible:outline-foreground focus-visible:outline-offset-2",
               isVoiceDisabled
                 ? "cursor-not-allowed opacity-50 pointer-events-none"
-                : "cursor-pointer hover:border-stone-400 dark:hover:border-neutral-600",
+                : "cursor-pointer hover:border-muted-foreground/50",
               disabled && !isVoiceDisabled && "cursor-not-allowed opacity-60",
-              isSelected && "shadow-sm"
+              isSelected ? "border-foreground bg-white dark:bg-neutral-950" : "border-border bg-white dark:bg-neutral-950",
+              "text-foreground"
             )}
-            style={{
-              backgroundColor: "var(--app-surface)",
-              borderColor: isSelected ? "var(--app-accent)" : "var(--app-border)",
-              color: "var(--app-text)",
-            }}
           >
             <div
               className={cn(
@@ -84,13 +80,13 @@ export function VoiceSelector({
               )}
               aria-hidden
             />
-            <div className="min-w-0 flex-1" style={{ color: "var(--app-text)" }}>
+            <div className="min-w-0 flex-1 text-foreground">
               <p className="font-semibold truncate">{v.name}</p>
-              <p className="text-sm truncate" style={{ color: "var(--app-text-muted)" }}>{v.description}</p>
+              <p className="text-sm truncate text-muted-foreground">{v.description}</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {isSelected && (
-                <div className="flex size-6 items-center justify-center rounded-full bg-teal-600 text-white">
+                <div className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
                   <Check className="size-3.5" strokeWidth={3} />
                 </div>
               )}
@@ -152,11 +148,7 @@ function PreviewButton({
       <button
         type="button"
         onClick={play}
-        className="flex size-9 shrink-0 items-center justify-center rounded-full shadow-sm hover:opacity-90"
-        style={{
-          backgroundColor: "var(--app-sidebar-bg)",
-          color: "var(--app-accent)",
-        }}
+        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar text-primary shadow-sm hover:opacity-90"
         aria-label={`Preview ${voiceName}`}
       >
         {isPlaying ? (

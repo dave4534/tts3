@@ -1,14 +1,17 @@
 import { cn } from "@/lib/utils";
 
+/* Voice persona circle colors – constant 300-shade palette (theme-independent) */
 const AVATAR_COLORS = [
-  "bg-teal-500",
-  "bg-amber-500",
-  "bg-rose-500",
-  "bg-slate-500",
-  "bg-indigo-500",
-  "bg-emerald-500",
-  "bg-orange-500",
-  "bg-violet-500",
+  "bg-blue-300",
+  "bg-emerald-300",
+  "bg-amber-300",
+  "bg-rose-300",
+  "bg-violet-300",
+  "bg-teal-300",
+  "bg-orange-300",
+  "bg-pink-300",
+  "bg-sky-300",
+  "bg-fuchsia-300",
 ];
 
 interface SelectedVoicePillProps {
@@ -27,8 +30,7 @@ export function SelectedVoicePill({
   const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
   return (
     <div
-      className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1.5", className)}
-      style={{ borderColor: "var(--app-border)", backgroundColor: "var(--app-surface)", color: "var(--app-text)" }}
+      className={cn("inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-foreground", className)}
       role="status"
       aria-label={`Selected voice: ${name}`}
     >

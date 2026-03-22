@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { cn } from "@/lib/utils";
+import { BOTTOM_BAR_HEIGHT_PX } from "@/lib/layout-constants";
 import { Sparkles, Download } from "lucide-react";
 import { useCallback, useState } from "react";
 
@@ -63,9 +64,12 @@ export function BottomBar({
   return (
     <footer
       className={cn(
-        "fixed bottom-0 left-0 z-10 shrink-0 border-t right-0 min-[600px]:right-80 lg:right-96 relative"
+        "fixed bottom-0 left-0 flex shrink-0 items-center border-t border-border bg-neutral-50 dark:bg-sidebar right-0 sm:right-80 lg:right-96"
       )}
-      style={{ borderColor: "var(--app-border)", backgroundColor: "var(--app-sidebar-bg)" }}
+      style={{
+        height: BOTTOM_BAR_HEIGHT_PX,
+        minHeight: BOTTOM_BAR_HEIGHT_PX,
+      }}
       role="contentinfo"
     >
       {status === "complete" && downloadUrl && (
@@ -74,34 +78,28 @@ export function BottomBar({
           onClick={handleDownload}
           disabled={downloading}
           aria-label="Download MP3"
-          className="absolute top-6 right-6 shrink-0 p-1 transition-opacity hover:opacity-70 disabled:opacity-50"
-          style={{ color: "var(--app-text-muted)" }}
+          className="absolute top-6 right-6 shrink-0 p-1 text-muted-foreground transition-opacity hover:opacity-70 disabled:opacity-50"
         >
           <Download className="size-5" />
         </button>
       )}
       <div
         className={cn(
-          "flex w-full items-center gap-4 px-4 py-3 sm:px-6",
+          "flex w-full items-center gap-4",
           status === "complete" ? "justify-center" : "justify-end"
         )}
+        style={{ paddingLeft: 'var(--app-spacer-px)', paddingRight: 'var(--app-spacer-px)', paddingTop: 0, paddingBottom: 0 }}
       >
         {status === "idle" && (
           <>
-            <p
-              className="text-sm tabular-nums"
-              style={{ color: "var(--app-text-muted)" }}
-            >
+            <p className="text-sm tabular-nums text-muted-foreground">
               {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} words
             </p>
             <Button
               size="lg"
               disabled={!canConvert}
               onClick={onConvert}
-              className={cn(
-                "h-9 min-w-[180px] rounded-full px-6 text-sm font-medium",
-                "bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700"
-              )}
+              className="h-9 min-w-[180px] rounded-full px-6 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Sparkles className="mr-2 size-4" />
               Generate Speech
@@ -115,18 +113,13 @@ export function BottomBar({
             aria-live="polite"
             aria-label={convertingLabel}
             className={cn(
-              "relative flex h-9 min-w-[180px] shrink-0 items-center justify-center overflow-hidden rounded-full px-6 text-sm font-medium"
+              "relative flex h-9 min-w-[180px] shrink-0 items-center justify-center overflow-hidden rounded-full px-6 text-sm font-medium bg-muted text-muted-foreground"
             )}
-            style={{
-              backgroundColor: "var(--app-disabled-btn-bg)",
-              color: "var(--app-disabled-btn-text)",
-            }}
           >
             <div
-              className="absolute inset-y-0 left-0 transition-[width] duration-300 ease-out"
+              className="absolute inset-y-0 left-0 bg-primary/20 transition-[width] duration-300 ease-out"
               style={{
                 width: isWarmingUp(progressState, progress) ? "0%" : `${progress}%`,
-                backgroundColor: "var(--app-disabled-btn-progress)",
               }}
             />
             <span className="relative z-10">{convertingLabel}</span>

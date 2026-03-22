@@ -26,7 +26,7 @@ export function ConvertingSpinner({ progress, className }: ConvertingSpinnerProp
         stroke="currentColor"
         strokeWidth={stroke}
         strokeOpacity={0.3}
-        className="text-white"
+        className="text-foreground"
       />
       <circle
         cx={size / 2}
@@ -39,7 +39,7 @@ export function ConvertingSpinner({ progress, className }: ConvertingSpinnerProp
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        className="text-white transition-[stroke-dashoffset] duration-300"
+        className="text-foreground transition-[stroke-dashoffset] duration-300"
       />
     </svg>
   );

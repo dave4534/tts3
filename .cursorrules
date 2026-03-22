@@ -60,6 +60,10 @@ There is NO separate backend service. Modal hosts everything: the API (via `@mod
 - Backend tests are more valuable than frontend tests — all the real processing happens there.
 - Focus on: route responses (`/convert`, `/job/{id}/status`), `chunk_text()` edge cases (blank lines, `\r\n`, empty input, long text), and the full job lifecycle (submit → poll → complete).
 
+### Planning & Context
+- Do not create plan files in `.cursor/plans/` unless the user explicitly requests a formal plan.
+- Prefer direct implementation over creating planning documents.
+
 ### Code Style
 - Python: use type hints, async where appropriate, follow PEP 8.
 - TypeScript/React: functional components, hooks, no class components.

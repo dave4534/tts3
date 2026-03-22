@@ -5,7 +5,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        serif: ["Georgia", "Cambria", "Times New Roman", "Times", "serif"],
+        display: ['var(--font-display)'],
+        body: ['var(--font-body)'],
+        sans: ['var(--font-body)'],
       },
       colors: {
         border: 'oklch(var(--border))',
@@ -31,6 +33,8 @@ export default {
         },
         destructive: 'oklch(var(--destructive))',
         ring: 'oklch(var(--ring))',
+        sidebar: 'oklch(var(--sidebar))',
+        'left-pane': 'oklch(var(--left-pane-bg))',
       },
       outlineColor: {
         ring: 'oklch(var(--ring) / 0.5)',
