@@ -11,7 +11,6 @@ import { useVoices } from "@/hooks/useVoices";
 import { useConvert } from "@/hooks/useConvert";
 import { useTheme } from "@/hooks/useTheme";
 import { ThemeToggleIcon } from "@/components/ThemeToggleIcon";
-import { cn } from "@/lib/utils";
 import {
   MAIN_PADDING_BOTTOM_IDLE_PX,
   MAIN_PADDING_BOTTOM_WITH_TEXT_PX,
@@ -146,7 +145,7 @@ function App() {
   return (
     <div
       className="flex h-screen flex-col overflow-hidden"
-      {...(debugLayout && { "data-debug-layout": "" })}
+      {...(debugLayout ? { "data-debug-layout": "" } : {})}
     >
       <header className="relative shrink-0 flex h-[80px] items-center border-b border-border bg-neutral-50 dark:bg-sidebar" style={{ paddingLeft: 'var(--app-spacer-px)', paddingRight: 'var(--app-spacer-px)' }}>
         <div className="flex min-w-0 flex-1 flex-col items-start justify-center gap-1 text-foreground">
